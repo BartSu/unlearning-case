@@ -27,6 +27,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import LeaveOneOut, cross_val_predict
 from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
@@ -57,8 +58,8 @@ FEATURE_COLS = [
 TARGET_COLS = ["Y_general", "Y_forget", "Y_retain", "Y_precision"]
 
 PARAM_GRID = {
-    "n_estimators": [100, 200, 500],
-    "max_depth": [2, 3, 5, None],
+    "n_estimators": [200],
+    "max_depth": [2, 3, 5],
     "min_samples_leaf": [2, 3, 5],
     "max_features": ["sqrt", 0.5, 1.0],
 }
@@ -92,11 +93,12 @@ def evaluate_loocv(X: np.ndarray, y: np.ndarray, model):
     return r2, mae, rmse, y_pred
 
 
-def select_best(X, y, candidates):
+def select_best(X, y, candidates, target_name=""):
     best_r2 = -np.inf
     best_info = None
 
-    for param_label, model in candidates:
+    for param_label, model in tqdm(candidates, desc=f"  LOOCV search [{target_name}]",
+                                   leave=True, ncols=90):
         r2, mae, rmse, y_pred = evaluate_loocv(X, y, model)
         if r2 > best_r2:
             best_r2 = r2
@@ -154,7 +156,7 @@ def main():
         print_section(f"Target: {target}")
         print(f"  Range: [{y.min():.6f}, {y.max():.6f}]  Mean: {y.mean():.6f}  Std: {y.std():.6f}")
 
-        best = select_best(X_train, y, candidates)
+        best = select_best(X_train, y, candidates, target_name=target)
         print(f"\n  Best model:  RF ({best['params']})")
         print(f"  LOOCV R²:    {best['r2']:.4f}")
         print(f"  LOOCV MAE:   {best['mae']:.6f}")
