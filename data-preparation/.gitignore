@@ -1,0 +1,13 @@
+__pycache__/
+
+# Generated datasets
+data/wikitext/
+data/wikitext-bak/
+data/forget*/
+
+# Unlearning saves and logs (large model checkpoints)
+unlearn/saves/
+unlearn/logs_wikitext/
+
+# open-unlearning framework (cloned repo)
+open-unlearning/
