@@ -1,39 +1,30 @@
 """
-Extract 13 dataset-level features for WikiText triplets (Phase 2).
-
-WikiText is a language modelling corpus with NO class labels.
-Adaptation: HDBSCAN cluster assignments serve as pseudo-labels for the
-features that require labels (MD, FDR, CHI, PMS, Kurtosis, n_classes, MCR).
-DBI and #clusters use HDBSCAN directly (same as the original paper).
+Extract dataset-level features for WikiText HDBSCAN triplets.
 
 Features (per Dang et al., ACL 2024):
   Embedding Distribution:  MD, FDR, CHI, DBI, #clusters (HDBSCAN)
-  Label Distribution:      PMS, Kurtosis, #classes
-  Surrogate Learnability:  MCR  (TF-IDF + LogReg on pseudo-labels)
   Token-Based Statistics:  avg_tokens, min_tokens, max_tokens, #unique_tokens
 """
 
 import json
 import warnings
-from collections import Counter
 from pathlib import Path
 import argparse
 
 import numpy as np
 import pandas as pd
 import hdbscan as hdb
-from scipy import stats
 from sklearn.metrics import calinski_harabasz_score, davies_bouldin_score
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import cross_val_score
 from sentence_transformers import SentenceTransformer
 from transformers import AutoTokenizer
 
 warnings.filterwarnings("ignore")
 
-WIKITEXT_DIR = Path(__file__).resolve().parent.parent / "data-preparation" / "data" / "wikitext"
-OUT_DIR = Path(__file__).resolve().parent
+WIKITEXT_DIR = (
+    Path(__file__).resolve().parent.parent.parent
+    / "data-preparation" / "data" / "wikitext_hdbscan_triplets"
+)
+OUT_DIR = Path(__file__).resolve().parent.parent
 
 
 # ── Feature Functions ────────────────────────────────────────────────────────
@@ -87,34 +78,6 @@ def clustering_and_pseudo_labels(embeddings, min_cluster_size=5):
     return dbi, max(n_clusters, 1), labels.tolist()
 
 
-def label_distribution_features(labels):
-    counts = np.array(list(Counter(labels).values()), dtype=float)
-    n_classes = len(counts)
-    std_val = counts.std(ddof=0)
-    pms = 3.0 * (counts.mean() - np.median(counts)) / std_val if std_val > 0 else 0.0
-    kurt_val = stats.kurtosis(counts, fisher=False)
-    return pms, (0.0 if np.isnan(kurt_val) else float(kurt_val)), n_classes
-
-
-def misclassification_rate(texts, labels):
-    y = np.array(labels)
-    n_classes = len(set(y))
-    if n_classes < 2:
-        return 1.0
-    min_count = min(Counter(y).values())
-    n_folds = min(5, min_count)
-    if n_folds < 2:
-        return 1.0
-    X = TfidfVectorizer(
-        analyzer="char_wb", ngram_range=(2, 5), max_features=10000,
-    ).fit_transform(texts)
-    acc = cross_val_score(
-        LogisticRegression(max_iter=500, solver="lbfgs", multi_class="auto"),
-        X, y, cv=n_folds, scoring="accuracy",
-    ).mean()
-    return 1.0 - acc
-
-
 def token_statistics(all_ids, lengths):
     unique_tokens = len(set(tid for ids in all_ids for tid in ids))
     return float(lengths.mean()), int(lengths.min()), int(lengths.max()), unique_tokens
@@ -145,8 +108,6 @@ def extract_features_for_triplet(name, texts, embed_model, tokenizer):
     md = mean_distance_among_classes(emb_valid, lab_valid)
     fdr = fisher_discriminant_ratio(emb_valid, lab_valid)
     chi = calinski_harabasz_index(emb_valid, lab_valid)
-    pms, kurt, n_classes = label_distribution_features(pseudo_labels)
-    mcr = misclassification_rate(texts, pseudo_labels)
     avg_tok, min_tok, max_tok, uniq_tok = token_statistics(all_ids, lengths)
 
     return {
@@ -157,10 +118,6 @@ def extract_features_for_triplet(name, texts, embed_model, tokenizer):
         "calinski_harabasz_index (CHI)": round(float(chi), 6),
         "davies_bouldin_index (DBI)": round(float(dbi), 6),
         "n_clusters (HDBSCAN)": int(n_clust),
-        "pearson_median_skewness (PMS)": round(float(pms), 6),
-        "kurtosis (Kurt)": round(float(kurt), 6),
-        "n_classes": int(n_classes),
-        "misclassification_rate (MCR)": round(float(mcr), 6),
         "avg_n_tokens": round(avg_tok, 2),
         "min_n_tokens": min_tok,
         "max_n_tokens": max_tok,
@@ -172,7 +129,7 @@ def extract_features_for_triplet(name, texts, embed_model, tokenizer):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Extract 13 features for WikiText triplets"
+        description="Extract Embedding Distribution + Token Statistics for WikiText triplets"
     )
     parser.add_argument("--data_dir", type=str, default=str(WIKITEXT_DIR))
     parser.add_argument("--output_dir", type=str, default=str(OUT_DIR))
@@ -195,7 +152,7 @@ def main():
 
     n = len(triplet_dirs)
     print("=" * 64)
-    print(f"  WikiText Feature Extraction: {n} triplets")
+    print(f"  WikiText Feature Extraction (Embed Dist + Token Stats): {n} triplets")
     print(f"  Embed model : {args.embed_model}")
     print(f"  Tokenizer   : {args.tokenizer}")
     print("=" * 64)
@@ -216,7 +173,7 @@ def main():
         all_features.append(feat)
         print(f"MD={feat['mean_distance_among_classes (MD)']:.4f}  "
               f"n_clust={feat['n_clusters (HDBSCAN)']:3d}  "
-              f"MCR={feat['misclassification_rate (MCR)']:.4f}")
+              f"avg_tok={feat['avg_n_tokens']:.1f}")
 
     df = pd.DataFrame(all_features)
 
