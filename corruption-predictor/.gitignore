@@ -1,1 +1,4 @@
 rf/
+*.csv
+*.json
+__pycache__/
