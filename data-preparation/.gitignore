@@ -1,11 +1,17 @@
-__pycache__/
+**/__pycache__/
 
 # Generated datasets
-data/wikitext/
-data/wikitext-bak/
-data/forget*/
+data/wikitext_raw/
+data/wikitext_filtered/
+data/wikitext_embeddings/
+data/wikitext_reduced/
+data/wikitext_clusters_hdbscan/
+data/wikitext_clusters_hdbscan_export/
+data/wikitext_clusters_hdbscan_summary/
+data/wikitext_*
+data/__pycache__/
 
 # Unlearning saves and logs (large model checkpoints)
 unlearn/saves/
 unlearn/logs_wikitext/
-
+unlearn/logs_wikitext_unlearn/
