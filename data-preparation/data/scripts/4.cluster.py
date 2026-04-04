@@ -112,7 +112,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--subset_size",
         type=int,
-        default=50000,
+        default=100000,
         help="Optional number of reduced vectors to cluster instead of the full dataset.",
     )
     parser.add_argument(

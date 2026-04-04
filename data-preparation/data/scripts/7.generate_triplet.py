@@ -21,14 +21,15 @@ Default outputs:
     ...
     run_manifest.json
 
-Each triplet corresponds to one cluster:
+Each triplet corresponds to one sampling of one cluster/domain:
   - train: sampled from the cluster
   - validation: sampled from the same cluster
   - test: sampled from the same cluster
 
 The three splits are disjoint. By default the noise cluster (-1) is excluded,
 and clusters with fewer than forget_size + validation_size + test_size rows are
-skipped.
+skipped. Multiple triplets can be generated per domain; those triplets are
+sampled independently and may overlap with each other.
 """
 
 from __future__ import annotations
@@ -115,20 +116,26 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--forget_size",
         type=int,
-        default=100,
+        default=50,
         help="Number of forget/train samples per cluster.",
     )
     parser.add_argument(
         "--validation_size",
         type=int,
-        default=100,
+        default=50,
         help="Number of validation/retain samples per cluster.",
     )
     parser.add_argument(
         "--test_size",
         type=int,
-        default=100,
+        default=50,
         help="Number of test samples per cluster.",
+    )
+    parser.add_argument(
+        "--triplets_per_domain",
+        type=int,
+        default=10,
+        help="How many independently sampled triplets to generate for each domain.",
     )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
@@ -345,6 +352,7 @@ def build_manifest(
         "forget_size": int(args.forget_size),
         "validation_size": int(args.validation_size),
         "test_size": int(args.test_size),
+        "triplets_per_domain": int(args.triplets_per_domain),
         "required_cluster_size": int(
             args.forget_size + args.validation_size + args.test_size
         ),
@@ -357,7 +365,14 @@ def build_manifest(
     outputs["manifest_json"] = manifest_path
     manifest["outputs"] = outputs
 
-    manifest["n_domains"] = len(triplets)
+    manifest["n_domains"] = len(
+        {
+            int(item["cluster_label"])
+            for item in triplets
+            if "cluster_label" in item
+        }
+    )
+    manifest["n_triplets"] = len(triplets)
     manifest["triplets"] = triplets
     manifest["skipped_clusters"] = skipped_clusters
     manifest["pipeline"] = {
@@ -396,6 +411,8 @@ def main() -> None:
 
     if args.forget_size <= 0 or args.validation_size <= 0 or args.test_size <= 0:
         raise RuntimeError("Require forget_size>0, validation_size>0, test_size>0")
+    if args.triplets_per_domain <= 0:
+        raise RuntimeError("Require triplets_per_domain>0")
 
     existing_triplet_manifest = load_existing_manifest(triplet_manifest_path)
     existing_manifest = dict(export_manifest) if export_manifest else dict(existing_triplet_manifest)
@@ -424,70 +441,82 @@ def main() -> None:
     required_size = args.forget_size + args.validation_size + args.test_size
     triplets: List[Dict[str, object]] = []
     skipped_clusters: List[Dict[str, object]] = []
+    triplet_counter = 1
 
     with open(texts_jsonl, "r", encoding="utf-8") as fp:
-        for i, cluster_id in enumerate(sorted(cluster_to_ids.keys()), start=1):
-            triplet_name = f"triplet_{i:03d}"
+        for cluster_id in sorted(cluster_to_ids.keys()):
             cluster_ids = cluster_to_ids[cluster_id]
             cluster_size = len(cluster_ids)
+            domain = cluster_to_domain.get(cluster_id, f"cluster_{cluster_id}")
 
             if cluster_size < required_size:
                 skip_info = {
-                    "name": triplet_name,
                     "cluster_label": cluster_id,
-                    "domain": cluster_to_domain.get(cluster_id, f"cluster_{cluster_id}"),
+                    "domain": domain,
                     "cluster_size": cluster_size,
                     "required_cluster_size": required_size,
+                    "skipped_triplets": int(args.triplets_per_domain),
                 }
                 if args.fail_on_small_cluster:
                     raise RuntimeError(
-                        f"{triplet_name} cluster={cluster_id}: "
+                        f"cluster={cluster_id}: "
                         f"cluster_size {cluster_size} < required_size {required_size}"
                     )
                 skipped_clusters.append(skip_info)
                 print(
-                    f"  skip {triplet_name}: cluster={cluster_id} "
+                    f"  skip cluster={cluster_id} "
                     f"size={cluster_size} < required={required_size}"
                 )
                 continue
 
-            cluster_seed = args.seed + (cluster_id * 7919)
-            forget_ids, validation_ids, test_ids = sample_cluster_splits(
-                ids=cluster_ids,
-                forget_size=args.forget_size,
-                validation_size=args.validation_size,
-                test_size=args.test_size,
-                seed=cluster_seed,
-            )
+            for domain_triplet_index in range(1, args.triplets_per_domain + 1):
+                triplet_name = f"triplet_{triplet_counter:03d}"
+                cluster_seed = (
+                    args.seed
+                    + (cluster_id * 7919)
+                    + (domain_triplet_index * 104729)
+                )
+                forget_ids, validation_ids, test_ids = sample_cluster_splits(
+                    ids=cluster_ids,
+                    forget_size=args.forget_size,
+                    validation_size=args.validation_size,
+                    test_size=args.test_size,
+                    seed=cluster_seed,
+                )
 
-            train_data = materialize_records(forget_ids, fp, offsets)
-            validation_data = materialize_records(validation_ids, fp, offsets)
-            test_data = materialize_records(test_ids, fp, offsets)
+                train_data = materialize_records(forget_ids, fp, offsets)
+                validation_data = materialize_records(validation_ids, fp, offsets)
+                test_data = materialize_records(test_ids, fp, offsets)
 
-            triplet_dir = os.path.join(triplet_output_dir, triplet_name)
-            os.makedirs(triplet_dir, exist_ok=True)
+                triplet_dir = os.path.join(triplet_output_dir, triplet_name)
+                os.makedirs(triplet_dir, exist_ok=True)
 
-            write_records_json(os.path.join(triplet_dir, "train.json"), train_data)
-            write_records_json(os.path.join(triplet_dir, "validation.json"), validation_data)
-            write_records_json(os.path.join(triplet_dir, "test.json"), test_data)
+                write_records_json(os.path.join(triplet_dir, "train.json"), train_data)
+                write_records_json(
+                    os.path.join(triplet_dir, "validation.json"), validation_data
+                )
+                write_records_json(os.path.join(triplet_dir, "test.json"), test_data)
 
-            triplets.append(
-                {
-                    "name": triplet_name,
-                    "cluster_label": cluster_id,
-                    "domain": cluster_to_domain.get(cluster_id, f"cluster_{cluster_id}"),
-                    "cluster_size": cluster_size,
-                    "forget_size": len(train_data),
-                    "validation_size": len(validation_data),
-                    "test_size": len(test_data),
-                    "unused_cluster_samples": cluster_size - required_size,
-                }
-            )
-            print(
-                f"  {triplet_name}: cluster={cluster_id} "
-                f"train={len(train_data)} validation={len(validation_data)} "
-                f"test={len(test_data)}"
-            )
+                triplets.append(
+                    {
+                        "name": triplet_name,
+                        "cluster_label": cluster_id,
+                        "domain": domain,
+                        "domain_triplet_index": domain_triplet_index,
+                        "cluster_size": cluster_size,
+                        "forget_size": len(train_data),
+                        "validation_size": len(validation_data),
+                        "test_size": len(test_data),
+                        "unused_cluster_samples_per_triplet": cluster_size - required_size,
+                    }
+                )
+                print(
+                    f"  {triplet_name}: cluster={cluster_id} "
+                    f"domain_triplet={domain_triplet_index}/{args.triplets_per_domain} "
+                    f"train={len(train_data)} validation={len(validation_data)} "
+                    f"test={len(test_data)}"
+                )
+                triplet_counter += 1
 
     manifest = build_manifest(
         existing_manifest=existing_manifest,
@@ -510,6 +539,7 @@ def main() -> None:
     print(f"  triplet_output_dir: {triplet_output_dir}")
     print(f"  offsets_npy:        {offsets_npy}")
     print(f"  domains_kept:       {manifest['n_domains']}")
+    print(f"  triplets_written:   {manifest['n_triplets']}")
     print(f"  clusters_skipped:   {len(skipped_clusters)}")
     print(f"  manifest:           {triplet_manifest_path}")
 
