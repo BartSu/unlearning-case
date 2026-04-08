@@ -19,7 +19,7 @@ For every source train record with a ``text`` field, the script loads a local
 vLLM engine (default: ``openai/gpt-oss-20b``) and generates:
   - question: a grounded QA question answerable only from the text
   - answer: a concise answer supported by the text
-  - qa_prompt: a ready-to-use prompt containing the source passage and question
+  - qa_prompt: a closed-book prompt (question only, no passage)
 
 No HTTP API/server is required. The output keeps one QA record per source train
 text and mirrors the original triplet directory layout so it can be used as a
@@ -453,12 +453,14 @@ def build_user_prompt(text: str) -> str:
     )
 
 
-def build_qa_prompt(text: str, question: str) -> str:
+def build_qa_prompt(question: str) -> str:
+    """Closed-book prompt: question only, no passage.
+
+    The model must rely on parametric knowledge so that base-correct /
+    unlearn-wrong labels genuinely reflect memorisation vs. forgetting.
+    """
     return (
-        "Answer the question using only the passage.\n\n"
-        "Passage:\n"
-        f"{text}\n\n"
-        "Question:\n"
+        f"Question:\n"
         f"{question}\n\n"
         "Answer:"
     )
@@ -824,7 +826,7 @@ def build_output_record(
         "text": text,
         "question": question,
         "answer": answer,
-        "qa_prompt": build_qa_prompt(text, question),
+        "qa_prompt": build_qa_prompt(question),
     }
 
 

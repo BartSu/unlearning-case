@@ -29,6 +29,7 @@ LOG_DIR="${SCRIPT_DIR}/logs_wikitext_unlearn"
 
 GPU="0"
 MODELS=("Llama-3.1-8B-Instruct")
+# MODELS=("Llama-3.1-8B") # base model ppl is lower, open-unlearning only support llama instruct models
 TRAINERS=("GradAscent")
 TRIPLETS=()
 START=1

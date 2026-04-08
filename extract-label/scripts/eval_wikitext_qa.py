@@ -199,7 +199,7 @@ def load_qa_records(json_path, limit_per_triplet=None):
     if limit_per_triplet is not None:
         payload = payload[:limit_per_triplet]
 
-    required_fields = ("question", "answer", "qa_prompt")
+    required_fields = ("question", "answer")
     for idx, record in enumerate(payload):
         if not isinstance(record, dict):
             raise RuntimeError(f"Expected item {idx} in {json_path} to be a JSON object")
@@ -292,17 +292,22 @@ def answer_is_correct(prediction, answer):
     return token_f1(pred_tokens, gold_tokens) >= 0.8
 
 
-def format_prompt(tokenizer, qa_prompt):
+def build_eval_prompt(question: str) -> str:
+    """Closed-book prompt: question only, no passage."""
+    return f"Question:\n{question}\n\nAnswer:"
+
+
+def format_prompt(tokenizer, prompt_text):
     if hasattr(tokenizer, "apply_chat_template"):
         try:
             return tokenizer.apply_chat_template(
-                [{"role": "user", "content": qa_prompt}],
+                [{"role": "user", "content": prompt_text}],
                 tokenize=False,
                 add_generation_prompt=True,
             )
         except (TypeError, ValueError, RuntimeError):
             pass
-    return qa_prompt
+    return prompt_text
 
 
 def extract_answer_text(text):
@@ -339,7 +344,7 @@ def get_terminator_ids(tokenizer):
 def generate_predictions(model, tokenizer, records, max_length, max_new_tokens, batch_size):
     model.eval()
     device = next(model.parameters()).device
-    prompts = [format_prompt(tokenizer, record["qa_prompt"]) for record in records]
+    prompts = [format_prompt(tokenizer, build_eval_prompt(record["question"])) for record in records]
     predictions = []
     terminators = get_terminator_ids(tokenizer)
     generation_kwargs = {

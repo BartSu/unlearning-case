@@ -44,7 +44,7 @@ def parse_args() -> argparse.Namespace:
         help="Default: <data_dir>/wikitext_embeddings/embeddings.npy",
     )
     parser.add_argument("--reducer", choices=["pca", "umap"], default="pca")
-    parser.add_argument("--n_components", type=int, default=100)
+    parser.add_argument("--n_components", type=int, default=200)
     parser.add_argument(
         "--pca_mode",
         choices=["auto", "incremental", "full"],

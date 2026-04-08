@@ -9,19 +9,16 @@ Strategy:
   always evaluate on a completely unseen forgetting set.  Grid search over
   RF hyperparameters, selecting the combo with the best macro-F1.
 
-Feature sets (--features):
-  all         23 features (everything in training_data.csv)
-  core7       7 hand-picked features across all 3 categories
-  prompt      3 per-question prompt features (A)
-  relation    6 prompt-forget relationship features (B)
-  forget_set  14 per-triplet forget-set statistics (C)
-  per_q       9 per-question features (A+B, no per-triplet)
-  <col1,col2> comma-separated custom column names
+Feature selection (--features):
+  all               use every feature column in training_data.csv (~375)
+  col1,col2,...     explicit comma-separated column names
+  cos_sim_*,eucl_*  fnmatch-style glob patterns (can mix with exact names)
 """
 
 import argparse
 import json
 import warnings
+from fnmatch import fnmatch
 from itertools import product
 from pathlib import Path
 
@@ -40,44 +37,12 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 ROOT = Path(__file__).resolve().parent
 TRAINING_CSV = ROOT / "training_data.csv"
-TRAINING_META = ROOT / "training_data.json"
 
-FEATURE_SETS = {
-    "all": [
-        "token_length", "base_model_loss", "base_model_confidence",
-        "sem_sim_to_source", "sem_sim_to_forget_avg", "sem_sim_to_forget_min",
-        "sem_sim_to_forget_max", "sem_sim_to_forget_std", "cos_dist_to_centroid",
-        "intra_cos_sim_mean", "intra_cos_sim_min", "intra_cos_sim_max",
-        "intra_cos_sim_std", "pca_var_ratio_top1", "pca_var_ratio_top3",
-        "pca_var_ratio_top5", "pca_n_components_90pct", "pca_n_components_95pct",
-        "pca_effective_rank", "avg_n_tokens", "min_n_tokens", "max_n_tokens",
-        "n_unique_tokens",
-    ],
-    "core7": [
-        "token_length", "base_model_loss",
-        "avg_n_tokens", "min_n_tokens", "max_n_tokens", "n_unique_tokens",
-        "sem_sim_to_forget_avg",
-    ],
-    "prompt": [
-        "token_length", "base_model_loss", "base_model_confidence",
-    ],
-    "relation": [
-        "sem_sim_to_source", "sem_sim_to_forget_avg", "sem_sim_to_forget_min",
-        "sem_sim_to_forget_max", "sem_sim_to_forget_std", "cos_dist_to_centroid",
-    ],
-    "forget_set": [
-        "intra_cos_sim_mean", "intra_cos_sim_min", "intra_cos_sim_max",
-        "intra_cos_sim_std", "pca_var_ratio_top1", "pca_var_ratio_top3",
-        "pca_var_ratio_top5", "pca_n_components_90pct", "pca_n_components_95pct",
-        "pca_effective_rank", "avg_n_tokens", "min_n_tokens", "max_n_tokens",
-        "n_unique_tokens",
-    ],
-    "per_q": [
-        "token_length", "base_model_loss", "base_model_confidence",
-        "sem_sim_to_source", "sem_sim_to_forget_avg", "sem_sim_to_forget_min",
-        "sem_sim_to_forget_max", "sem_sim_to_forget_std", "cos_dist_to_centroid",
-    ],
+NON_FEATURE_COLS = {
+    "split", "source_train_index", "question",
+    "base_correct", "unlearn_correct", "case", "label",
 }
+TOP_N_IMPORTANCE = 30
 
 PARAM_GRID = {
     "n_estimators": [200, 500],
@@ -87,19 +52,23 @@ PARAM_GRID = {
 }
 
 
-def resolve_feature_cols(spec, available_cols):
-    if spec in FEATURE_SETS:
-        cols = FEATURE_SETS[spec]
-    else:
-        cols = [c.strip() for c in spec.split(",") if c.strip()]
-    missing = [c for c in cols if c not in available_cols]
-    if missing:
-        raise ValueError(f"Columns not found in data: {', '.join(missing)}")
-    return cols
-
-
-def load_data(csv_path):
-    return pd.read_csv(csv_path)
+def resolve_feature_cols(spec: str, df: pd.DataFrame) -> list[str]:
+    available = [c for c in df.columns if c not in NON_FEATURE_COLS]
+    if spec == "all":
+        return available
+    cols: list[str] = []
+    for part in spec.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        if "*" in part or "?" in part:
+            cols.extend(c for c in available if fnmatch(c, part))
+        elif part in set(df.columns):
+            cols.append(part)
+        else:
+            raise ValueError(f"Column not found: {part}")
+    seen: set[str] = set()
+    return [c for c in cols if c not in seen and not seen.add(c)]
 
 
 def build_candidates():
@@ -112,8 +81,7 @@ def build_candidates():
         params["n_jobs"] = -1
         label = ", ".join(f"{k}={v}" for k, v in params.items()
                           if k in PARAM_GRID)
-        model = RandomForestClassifier(**params)
-        candidates.append((label, model))
+        candidates.append((label, RandomForestClassifier(**params)))
     return candidates
 
 
@@ -150,18 +118,17 @@ def main():
         description="Train RF classifier for per-question corruption prediction"
     )
     parser.add_argument("--data", default=str(TRAINING_CSV))
-    parser.add_argument(
-        "--features", default="all",
-        help="Feature set: " + " | ".join(FEATURE_SETS) + " | col1,col2,... (default: all)",
-    )
+    parser.add_argument("--features", default="all",
+                        help="all | col1,col2,... | glob patterns (default: all)")
     parser.add_argument("--outdir", default=str(ROOT / "rf"))
     args = parser.parse_args()
 
     outdir = Path(args.outdir)
     outdir.mkdir(parents=True, exist_ok=True)
 
-    df = load_data(args.data)
-    feature_cols = resolve_feature_cols(args.features, set(df.columns))
+    df = pd.read_csv(args.data)
+    feature_cols = resolve_feature_cols(args.features, df)
+    df[feature_cols] = df[feature_cols].fillna(0)
     X = df[feature_cols].values
     y = df["label"].values
     groups = df["split"].values
@@ -177,7 +144,6 @@ def main():
     print(f"  Label=0:     {(1-y).sum():.0f}  ({1-y.mean():.1%})")
     print(f"  Groups:      {len(set(groups))} triplets")
     print(f"  HP combos:   {n_combos}")
-    print(f"  Columns:     {', '.join(feature_cols)}")
 
     # ── Grid search with LOGO CV ─────────────────────────────────────────
     print_section("LOGO CV Grid Search")
@@ -245,10 +211,10 @@ def main():
     ranked = sorted(zip(feature_cols, importances, std_importances),
                     key=lambda x: x[1], reverse=True)
 
-    print(f"  Feature importances:")
-    for fname, imp, std in ranked:
+    print(f"  Top-{TOP_N_IMPORTANCE} feature importances (of {len(feature_cols)}):")
+    for fname, imp, std in ranked[:TOP_N_IMPORTANCE]:
         bar = "#" * int(imp * 60)
-        print(f"    {fname:>35s}  {imp:.4f} ±{std:.4f}  {bar}")
+        print(f"    {fname:>40s}  {imp:.4f} ±{std:.4f}  {bar}")
 
     # ── Save artifacts ───────────────────────────────────────────────────
     pred_df = df[["split", "source_train_index", "label"]].copy()
@@ -289,7 +255,7 @@ def main():
           f"Rec={scores['recall']:.4f}  "
           f"AUC={scores['roc_auc']:.4f}")
     print(f"\n  Artifacts saved to {outdir}/")
-    print(f"    - results.json            (metrics + feature importances)")
+    print(f"    - results.json            (metrics + all feature importances)")
     print(f"    - logo_predictions.csv    (per-question LOGO CV predictions)")
     print(f"    - model_corruption.joblib (fitted model on all data)")
 
