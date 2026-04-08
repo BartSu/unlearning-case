@@ -10,8 +10,12 @@ data/wikitext_clusters_hdbscan_export/
 data/wikitext_clusters_hdbscan_summary/
 data/wikitext_*
 data/__pycache__/
+data/bak/
 
 # Unlearning saves and logs (large model checkpoints)
 unlearn/saves/
 unlearn/logs_wikitext/
 unlearn/logs_wikitext_unlearn/
+
+unlearn/*bak/
+unlearn/*results/
