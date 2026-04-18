@@ -37,74 +37,80 @@
 \maketitle
 
 % ────────────────────────────────────────────────────────────────────────────
-\begin{frame}{一句话贡献（初步）}
-    \begin{alertblock}{}
-        在当前设置下，LLM unlearning 的 ppl 副作用沿语义距离呈三层衰减：\\[0.2em]
-        \hspace*{1em}\textbf{L1 forget 1.76× \;→\; L2 locality 1.29× \;→\; L3 spillover 1.16×} \\[0.2em]
-        但 L3 \emph{并未归零}（\textbf{61.6\,\%} 跨簇样本 surprisal 上升）。
-    \end{alertblock}
+\begin{frame}{一句话贡献}
+    \begin{center}
+        \Large
+        Unlearning 的副作用沿语义距离\textbf{三层衰减，但不归零}。
+    \end{center}
 
-    \begin{itemize}
-        \item 10 个 forget set 上 L1 差 \textbf{1.7$\times$}
-              \;$\Rightarrow$\; 提示单 forget-set benchmark \emph{稳定性不足}。
-        \item 用 \textbf{12 维 forget-set 内禀几何}、\emph{不跑 unlearn}，
-              LOO Spearman $\rho\approx\textbf{0.62}$ 预测三层风险。
-        \item L1 层 top-1 预测与真实排序吻合（$n=10$，单观察点）
-              $\Rightarrow$ \emph{forget-set 审计} 的 proof-of-concept。
-    \end{itemize}
+    \vspace{0.8em}
+    \begin{center}
+        \Large
+        \textbf{L1 \;1.76×} \;→\; \textbf{L2 \;1.29×} \;→\; \textbf{L3 \;1.16×}
+    \end{center}
 
-    \vspace{0.3em}
-    \footnotesize\itshape
-    所有结论均基于：单 base model（Llama-3.1-8B-Instruct）、单 unlearner
-    （GradAscent）、$n=10$ 个 forget set。
+    \vspace{0.8em}
+    \begin{center}
+        \normalsize
+        且 \alert{61.6\,\%} 的「无关」样本 PPL 也被抬高。
+    \end{center}
+
+    \vfill
+    \footnotesize\itshape\centering
+    Llama-3.1-8B-Instruct · GradAscent · $n=10$ forget sets.
 \end{frame}
 
 % ────────────────────────────────────────────────────────────────────────────
 \section{动机与定义}
 
-\begin{frame}{动机：unlearning 贵，副作用还反直觉}
-    \begin{columns}[T,onlytextwidth]
-        \column{0.54\textwidth}
-        \textbf{痛点}
-        \begin{itemize}
-            \item Fine-tune 8B + 跨评测 $\Rightarrow$ 数 GPU-hour / forget-set。
-            \item 同算法在不同 forget set 上副作用差 \textbf{1.7×}。
-            \item 现有 unlearning 论文几乎只用 \emph{一个} forget set 报数字。
-        \end{itemize}
+\begin{frame}{动机：一句话}
+    \vfill
+    \begin{center}
+        \Large
+        换个 forget set，副作用能差 \textbf{1.7×}。
+    \end{center}
 
-        \column{0.46\textwidth}
-        \textbf{研究问题}
-        \vspace{0.3em}
-        \begin{block}{}
-            给候选 forget set，\emph{不 fine-tune} 就预测它的
-            L1 / L2 / L3 corruption profile。
-        \end{block}
-    \end{columns}
+    \vspace{0.6em}
+    \begin{center}
+        \normalsize
+        可每跑一个 unlearn 要数 GPU-hour。
+    \end{center}
 
-    \vspace{0.8em}
-    \centering
-    \small 把 unlearning 从\textbf{"每次都跑"} 改为\textbf{"先审计、再决定"}。
+    \vspace{1.0em}
+    \begin{center}
+        \Large
+        \alert{能不能不 fine-tune，就预测副作用？}
+    \end{center}
+    \vfill
 \end{frame}
 
-\begin{frame}{三层 Corruption View}
-    对 base 模型 $f$ 与 $\mathcal{D}_f$ 上 GradAscent 后的 $f_{\mathcal{D}_f}$：
-    \[
-        r(f, \mathcal{D}_f, x) \;=\;
-        \frac{\mathrm{PPL}(f_{\mathcal{D}_f}, x)}{\mathrm{PPL}(f, x)}.
-    \]
+\begin{frame}{三层是什么：一张同心圆图}
+    \centering
+    \begin{tikzpicture}[font=\small]
+        \fill[mLightBrown!55]  (0,0) circle (1.1);
+        \fill[mLightBrown!25]  (0,0) circle (2.1) (0,0) circle (1.1);
+        \draw[thick] (0,0) circle (1.1);
+        \draw[thick] (0,0) circle (2.1);
+        \draw[thick, dashed] (0,0) circle (3.3);
 
-    \vspace{0.3em}
-    \centering\small
-    \begin{tabular}{@{}lll@{}}
-        \toprule
-        层 & $x$ 与 $\mathcal{D}_f$ 的关系 & 直观含义 \\
-        \midrule
-        \textbf{L1} forget     & $x$ 就是 $\mathcal{D}_f$ 的 train 分片   & 故意遗忘强度 \\
-        \textbf{L2} locality   & $x$ 来自同簇 retain/test             & 局部附带损伤 \\
-        \textbf{L3} spillover  & $x$ 来自\emph{另一簇}                 & 跨簇知识污染 \\
-        \bottomrule
-    \end{tabular}
+        \node at (0,0)       {\textbf{L1}};
+        \node at (0,1.55)    {\textbf{L2}};
+        \node at (0,2.7)     {\textbf{L3}};
 
+        \node[right=3mm] at (1.1,0)  {\footnotesize 被 unlearn 的那批样本（同一 cluster · train）};
+        \node[right=3mm] at (2.1,1.55) {\footnotesize 同 cluster 的\emph{没训过}的样本（val/test）};
+        \node[right=3mm] at (3.3,2.7)  {\footnotesize \emph{别的 cluster} 的样本};
+    \end{tikzpicture}
+
+    \vspace{0.6em}
+    \centering
+    指标：
+    $\displaystyle r = \frac{\text{PPL}_{\text{unlearned}}}{\text{PPL}_{\text{base}}}$
+    \quad（PPL 被抬高几倍）
+
+    \vspace{0.6em}
+    \footnotesize
+    L1 = 想遗忘的\quad L2 = 连带忘的\quad L3 = 不该忘的也被波及
 \end{frame}
 
 % ────────────────────────────────────────────────────────────────────────────
@@ -149,20 +155,14 @@
 % ────────────────────────────────────────────────────────────────────────────
 \section{第一幕 · 数据证实三层 View}
 
-\begin{frame}{这一幕要验证的三个论断}
-    若 §定义中的三层切分真抓住了 corruption 结构，数据应同时满足：
-    \vspace{0.5em}
+\begin{frame}{这一幕要说服你三件事}
+    \vspace{0.8em}
     \begin{description}
-        \item[\alert{C1 单调性}] $r$ 随语义距离 L1 → L2 → L3 递减。\\
-            否则分层只是任意分箱，\emph{不是有序结构}。
-        \item[\alert{C2 非零溢出}] L3 几何均值 $>1$ 且非零率可观。\\
-            否则跨簇污染只是噪声，框架退化为 locality 分析。
-        \item[\alert{C3 forget-set 依赖}] 三层 profile 在 forget set 间显著不同。\\
-            否则三层只是算法常数，\emph{无审计可言}（§第二幕失去动机）。
+        \setlength\itemsep{0.8em}
+        \item[\alert{C1}] 三层\textbf{严格递减}（L1 > L2 > L3），不是乱分箱。
+        \item[\alert{C2}] L3 \textbf{不是 0}：无关样本也真被波及。
+        \item[\alert{C3}] profile \textbf{随 forget set 变化}，所以\emph{值得审计}。
     \end{description}
-    \vspace{0.4em}
-    \centering\small
-    接下来两帧分别给出 \textbf{C1 + C2} 与 \textbf{C3} 的证据。
 \end{frame}
 
 \begin{frame}{C1 + C2：层级 headline（全池样本）}
@@ -252,25 +252,30 @@
 % ────────────────────────────────────────────────────────────────────────────
 \section{第二幕 · 与其每次 unlearn，不如审计}
 
-\begin{frame}{审计问题}
-    \begin{block}{Forget-Set Audit}
-        给候选 $\mathcal{D}_f$ 与 base 模型，\emph{不跑 fine-tune}，输出
-        L1 / L2 / L3 三个风险分数。
-    \end{block}
+\begin{frame}{审计问题：输入是什么、输出是什么}
+    \vspace{0.4em}
+    \begin{center}
+        \begin{tikzpicture}[font=\small, node distance=10mm]
+            \node[draw, rounded corners, fill=mDarkTeal!12, minimum width=32mm, minimum height=12mm, align=center] (in)
+                {\textbf{输入}\\ forget set 的\\ 12 维几何特征};
+            \node[draw, rounded corners, fill=mLightGreen!25, right=16mm of in, minimum width=28mm, minimum height=12mm, align=center] (box) {\textbf{审计器}\\ Ridge};
+            \node[draw, rounded corners, fill=mLightBrown!25, right=16mm of box, minimum width=32mm, minimum height=12mm, align=center] (out)
+                {\textbf{输出}\\ L1 / L2 / L3\\ 三个风险分数};
+            \draw[-Latex, thick] (in) -- (box);
+            \draw[-Latex, thick] (box) -- (out);
+        \end{tikzpicture}
+    \end{center}
+
+    \vspace{0.8em}
+    \begin{center}
+        \large
+        \alert{不看 evaluation · 不跑 unlearn}
+    \end{center}
 
     \vspace{0.6em}
-    \textbf{审计特征（12 维，纯 forget-set 内禀几何）}
-    \begin{itemize}
-        \item 方差：\texttt{emb\_variance\_\{mean,max\}}
-        \item 两两：\texttt{pairwise\_sim\_\{mean,std,q90\}}, \texttt{pairwise\_eucl\_mean}
-        \item Centroid / norm：\texttt{centroid\_norm}, \texttt{emb\_norm\_\{mean,std\}}
-        \item 集中度：\texttt{effective\_rank}, \texttt{isotropy}, \texttt{spread\_over\_centroid}
-    \end{itemize}
-
-    \vspace{0.4em}
-    \footnotesize
-    $\bullet$ 不看任何 evaluation text $\bullet$ 不跑任何 unlearn
-    $\bullet$ 10 forget set 上 Leave-One-Out + Ridge。
+    \footnotesize\centering
+    12 维 = 方差 / 两两相似度 / centroid / 集中度（effective rank, isotropy）。\\
+    10 forget set 上 Leave-One-Out。
 \end{frame}
 
 \begin{frame}{审计结果：回归 + 排序}
