@@ -20,7 +20,7 @@ Ralph agent：每次迭代开始时阅读此文件，结束时更新此文件。
 
 ### 阶段 4 — 回归预测器
 - [ ] 验证 `4.regression-predictor/3.corruption_from_geometry.py` 能无错训练
-- [ ] 运行 `4.regression-predictor/4.audit_experiments.py` 并记录指标
+- [x] 运行 `4.regression-predictor/4.audit_experiments.py` 并记录指标
 - [ ] 在留出检查点上报告 R² / MAE
 
 ### 阶段 5 — 结果汇报
@@ -37,6 +37,16 @@ Ralph agent：每次迭代开始时阅读此文件，结束时更新此文件。
 - 产物：<路径、commit 哈希>
 - 下一步：<下一个任务 id>
 -->
+
+### 迭代 1 — 2026-04-18
+- 任务：验证三层 knowledge corruption 视角 + 审计 forget dataset 无需 unlearn
+- 结果：pass
+- 产物：`4.regression-predictor/audit/{part1_corruption_profile.csv, part1_per_sample_layers.csv, part2_forget_features.csv, part2_audit_predictions.csv, part3_coverage.csv, audit_summary.json}`
+- 关键数字：
+  - Part 1（三层 ground truth，n=500/1000/4500）：L1 geo=1.762×（>1.1× 占 95.6%，>2× 占 33.2%）；L2 geo=1.290×（>1.1× 占 82.8%）；L3 geo=1.158×（>1.1× 占 61.6%，>2× 占 0.0%）。三层单调衰减成立，且 L3 未归零。
+  - Part 2（LOO，n=10，仅 forget 集几何 12 维）：L1 R²=+0.443 ρ=+0.624 top1 ✓；L2 R²=+0.410 ρ=+0.624；L3 R²=+0.190 ρ=+0.612。
+  - Part 3b：mean retain-coverage vs 真实 L3 spillover ρ=−0.423。
+- 下一步：阶段 4 剩余条目（留出 checkpoint 的 R²/MAE 报告）；阶段 5 图表重生成
 
 ## 阻塞项
 
