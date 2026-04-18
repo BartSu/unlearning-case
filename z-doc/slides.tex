@@ -87,9 +87,9 @@
 \begin{frame}{三层是什么：一张同心圆图}
     \centering
     \begin{tikzpicture}[font=\small]
+        \fill[mDarkTeal!10]    (0,0) circle (3.2);
+        \fill[mLightBrown!30]  (0,0) circle (2.0);
         \fill[mLightBrown!60]  (0,0) circle (1.0);
-        \fill[mLightBrown!30]  (0,0) circle (2.0) (0,0) circle (1.0);
-        \fill[mDarkTeal!10]    (0,0) circle (3.2) (0,0) circle (2.0);
         \draw[thick] (0,0) circle (1.0);
         \draw[thick] (0,0) circle (2.0);
         \draw[thick, dashed] (0,0) circle (3.2);
@@ -98,17 +98,17 @@
         \node at (0, 1.5)    {\textbf{\Large L2}};
         \node at (0, 2.6)    {\textbf{\Large L3}};
 
-        \node[right=4mm, align=left] at (1.0, 0.0)
-            {\textbf{L1}：\emph{想遗忘的}\\ \footnotesize = 被 unlearn 那批样本};
-        \node[right=4mm, align=left] at (2.0, 1.5)
-            {\textbf{L2}：\emph{连带忘的}\\ \footnotesize = 同 cluster · 没训过};
-        \node[right=4mm, align=left] at (3.2, 2.6)
-            {\textbf{L3}：\emph{不该忘却被波及}\\ \footnotesize = 别的 cluster};
-    \end{tikzpicture}
+        \draw[-Latex, thick] (3.4, 0.0) -- node[right, align=left]
+            {\textbf{L1} 想遗忘的\\ \footnotesize 被 unlearn 那批} (1.2, 0.0);
+        \draw[-Latex, thick] (3.7, 1.5) -- node[right, align=left]
+            {\textbf{L2} 连带忘的\\ \footnotesize 同 cluster · 没训过} (2.1, 1.5);
+        \draw[-Latex, thick] (4.0, 2.7) -- node[right, align=left]
+            {\textbf{L3} 不该忘却被波及\\ \footnotesize 别的 cluster} (3.1, 2.7);
 
-    \vspace{0.4em}
-    \centering
-    \footnotesize 越往外离 forget set 越远 $\Rightarrow$ 副作用应越小
+        \node[left, font=\footnotesize] at (-3.3, 0) {离 forget set 越远};
+        \draw[-Latex, thick, mDarkTeal] (-3.3, 0.3) -- (-3.3, 2.5);
+        \node[left, font=\footnotesize] at (-3.3, 2.8) {副作用应越小};
+    \end{tikzpicture}
 \end{frame}
 
 \begin{frame}{怎么量化：一个比值}
@@ -425,12 +425,10 @@
 
 % ────────────────────────────────────────────────────────────────────────────
 \begin{frame}[standout]
-    三层衰减 \;·\; spillover 不可忽略 \;·\; 无需 unlearn 的审计 \\[0.4em]
+    三层衰减，但不归零。\\[0.5em]
     \normalsize
-    \textbf{1.76$\times$ → 1.29$\times$ → 1.16$\times$}\; |\; 61.6\,\%
-    \; |\; LOO $\rho \approx 0.62$ \; |\; L1 top-1 吻合 (单点) \\[0.3em]
-    \scriptsize\itshape
-    单 base model · 单 unlearner · $n=10$ forget sets \;—\; 待更大 $n$ 复证。
+    \textbf{1.76× → 1.29× → 1.16×}\\[0.3em]
+    审计 $\rho \approx 0.62$，无需 unlearn。
 \end{frame}
 
 \appendix
