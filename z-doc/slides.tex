@@ -87,30 +87,49 @@
 \begin{frame}{三层是什么：一张同心圆图}
     \centering
     \begin{tikzpicture}[font=\small]
-        \fill[mLightBrown!55]  (0,0) circle (1.1);
-        \fill[mLightBrown!25]  (0,0) circle (2.1) (0,0) circle (1.1);
-        \draw[thick] (0,0) circle (1.1);
-        \draw[thick] (0,0) circle (2.1);
-        \draw[thick, dashed] (0,0) circle (3.3);
+        \fill[mLightBrown!60]  (0,0) circle (1.0);
+        \fill[mLightBrown!30]  (0,0) circle (2.0) (0,0) circle (1.0);
+        \fill[mDarkTeal!10]    (0,0) circle (3.2) (0,0) circle (2.0);
+        \draw[thick] (0,0) circle (1.0);
+        \draw[thick] (0,0) circle (2.0);
+        \draw[thick, dashed] (0,0) circle (3.2);
 
-        \node at (0,0)       {\textbf{L1}};
-        \node at (0,1.55)    {\textbf{L2}};
-        \node at (0,2.7)     {\textbf{L3}};
+        \node at (0, 0.0)    {\textbf{\Large L1}};
+        \node at (0, 1.5)    {\textbf{\Large L2}};
+        \node at (0, 2.6)    {\textbf{\Large L3}};
 
-        \node[right=3mm] at (1.1,0)  {\footnotesize 被 unlearn 的那批样本（同一 cluster · train）};
-        \node[right=3mm] at (2.1,1.55) {\footnotesize 同 cluster 的\emph{没训过}的样本（val/test）};
-        \node[right=3mm] at (3.3,2.7)  {\footnotesize \emph{别的 cluster} 的样本};
+        \node[right=4mm, align=left] at (1.0, 0.0)
+            {\textbf{L1}：\emph{想遗忘的}\\ \footnotesize = 被 unlearn 那批样本};
+        \node[right=4mm, align=left] at (2.0, 1.5)
+            {\textbf{L2}：\emph{连带忘的}\\ \footnotesize = 同 cluster · 没训过};
+        \node[right=4mm, align=left] at (3.2, 2.6)
+            {\textbf{L3}：\emph{不该忘却被波及}\\ \footnotesize = 别的 cluster};
     \end{tikzpicture}
 
-    \vspace{0.6em}
+    \vspace{0.4em}
     \centering
-    指标：
-    $\displaystyle r = \frac{\text{PPL}_{\text{unlearned}}}{\text{PPL}_{\text{base}}}$
-    \quad（PPL 被抬高几倍）
+    \footnotesize 越往外离 forget set 越远 $\Rightarrow$ 副作用应越小
+\end{frame}
 
-    \vspace{0.6em}
-    \footnotesize
-    L1 = 想遗忘的\quad L2 = 连带忘的\quad L3 = 不该忘的也被波及
+\begin{frame}{怎么量化：一个比值}
+    \vfill
+    \begin{center}
+        \Large
+        $r \;=\; \dfrac{\text{PPL}_\text{unlearned}}{\text{PPL}_\text{base}}$
+    \end{center}
+
+    \vspace{0.8em}
+    \begin{center}
+        \large
+        $r = 1.8$ $\Rightarrow$ 这条样本的 PPL 被抬高到 \textbf{1.8 倍}。
+    \end{center}
+
+    \vspace{0.8em}
+    \begin{center}
+        \normalsize
+        每一层取几何均值 $\Rightarrow$ 得到 L1 / L2 / L3 的一个数。
+    \end{center}
+    \vfill
 \end{frame}
 
 % ────────────────────────────────────────────────────────────────────────────
