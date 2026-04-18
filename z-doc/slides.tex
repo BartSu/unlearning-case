@@ -114,42 +114,28 @@
 \end{frame}
 
 % ────────────────────────────────────────────────────────────────────────────
-\begin{frame}{Measurement Pipeline}
+\begin{frame}{数据怎么来：四步}
     \centering
     \begin{tikzpicture}[
         node distance=3.5mm,
         box/.style={draw, rounded corners=2pt, align=center,
-                    minimum height=8mm, text width=28mm, font=\scriptsize},
-        sm/.style={draw, rounded corners=2pt, align=center,
-                   minimum height=6mm, text width=20mm, font=\scriptsize},
+                    minimum height=10mm, text width=30mm, font=\small},
         arr/.style={-Latex, thick, mDarkTeal},
     ]
-        \node[box, fill=mDarkTeal!12] (c) {WikiText-103\\HDBSCAN $\to$ \textbf{10 语义簇}};
-        \node[box, fill=mDarkTeal!12, right=6mm of c] (t) {每簇采 1 triplet\\= 3 splits $\times$ 50 文本};
-        \node[box, fill=mLightGreen!20, right=6mm of t] (u) {\textbf{10 个 GradAscent}\\unlearn ckpt};
-        \node[box, fill=mLightBrown!25, right=6mm of u] (m) {\textbf{10$\times$10 cross-matrix}\\per-sample ppl};
+        \node[box, fill=mDarkTeal!12] (c) {WikiText-103\\聚成 \textbf{10 簇}};
+        \node[box, fill=mDarkTeal!12, right=6mm of c] (t) {每簇 1 个\\ forget set};
+        \node[box, fill=mLightGreen!20, right=6mm of t] (u) {\textbf{10 次}\\ unlearn};
+        \node[box, fill=mLightBrown!25, right=6mm of u] (m) {\textbf{10×10}\\ cross-ppl};
 
         \draw[arr] (c) -- (t);
         \draw[arr] (t) -- (u);
         \draw[arr] (u) -- (m);
     \end{tikzpicture}
 
-    \vspace{1.0em}
-    \scriptsize
-    \begin{tabular}{@{}lll@{}}
-        \toprule
-        矩阵位置 & 分片 & 用作 \\
-        \midrule
-        diagonal \;\; $m = e$ & \texttt{train} (50)               & \textbf{L1} forget \; ($n=500$) \\
-        diagonal \;\; $m = e$ & \texttt{validation + test} (100)  & \textbf{L2} locality \; ($n=1\,000$) \\
-        off-diagonal \;\; $m \neq e$ & \texttt{test} (50)                & \textbf{L3} spillover \; ($n=4\,500$) \\
-        \bottomrule
-    \end{tabular}
-
-    \vspace{0.8em}
-    \footnotesize
-    Triplet $=$ \texttt{(train, validation, test)} 三分片均来自\emph{同一}
-    语义簇、\emph{互不重叠}；每分片 50 文本。监督信号 $=\log r$。
+    \vspace{1.4em}
+    \centering
+    \large
+    10×10 矩阵的\textbf{对角线} = L1 + L2\quad\textbf{非对角线} = L3
 \end{frame}
 
 % ────────────────────────────────────────────────────────────────────────────
@@ -165,28 +151,24 @@
     \end{description}
 \end{frame}
 
-\begin{frame}{C1 + C2：层级 headline（全池样本）}
+\begin{frame}{C1 + C2：headline 数字}
+    \vspace{0.3em}
     \centering
-    \begin{tabular}{@{}lrrrr@{}}
+    \begin{tabular}{@{}lccc@{}}
         \toprule
-        Layer & $n$ & geo-mean $r$ & $>1.1\times$ & $>2\times$ \\
+        & L1 forget & L2 locality & L3 spillover \\
         \midrule
-        L1 forget     &   500 & \textbf{1.762$\times$} & 95.6\,\% & 33.2\,\% \\
-        L2 locality   & 1\,000 & \textbf{1.290$\times$} & 82.8\,\% &  3.4\,\% \\
-        L3 spillover  & 4\,500 & \textbf{1.158$\times$} & \alert{61.6\,\%} &  0.0\,\% \\
+        geo-mean $r$           & \textbf{1.76×} & \textbf{1.29×} & \textbf{1.16×} \\
+        被抬高（$>1.1×$）占比    & 95.6\,\%       & 82.8\,\%       & \alert{61.6\,\%} \\
         \bottomrule
     \end{tabular}
 
-    \vspace{0.8em}
-    \begin{itemize}
-        \item \textbf{C1 成立}：1.762 → 1.290 → 1.158 严格单调；L2 保留 L1
-              损伤 \textbf{38\,\%}，L3 保留 \textbf{21\,\%}。
-        \item \textbf{C2 成立}：L3 geo-mean $=1.158\times$、\alert{61.6\,\%}
-              跨簇样本 surprisal 真的上升 $\Rightarrow$ 溢出\emph{不可忽略}。
-        \item 消歧参照：self (同簇 test) $1.291\times$ vs. cross $1.158\times$，
-              locality multiplier 仅 \textbf{1.114$\times$} —— L2 只比 L3 高
-              $\sim$11\,\%，\alert{局部性存在但比常见直觉弱}。
-    \end{itemize}
+    \vspace{1.2em}
+    \begin{center}
+        \large
+        \textbf{C1 成立}：1.76 $>$ 1.29 $>$ 1.16\\[0.4em]
+        \textbf{C2 成立}：L3 仍有 \alert{61.6\,\%} 样本被抬高
+    \end{center}
 \end{frame}
 
 \begin{frame}{C1 + C2：三层衰减可视化}
@@ -199,44 +181,31 @@
     右轴：$r>1.1$ 的样本比例在 L3 仍达 \alert{61.6\,\%}（\textbf{C2}：spillover 非平凡）。
 \end{frame}
 
-\begin{frame}{C3：三层 profile 随 forget set 而变（差 1.7$\times$）}
+\begin{frame}{C3：换个 forget set，副作用差多少？}
     \centering
-    \scriptsize
-    \begin{tabular}{@{}lrrrrr@{}}
+    \small
+    \begin{tabular}{@{}lccc@{}}
         \toprule
-        forget set & 簇 & L1 & L2 & L3\_out & \\
+        & L1 & L2 & L3 \\
         \midrule
-        triplet\_091 & star    & 1.42 & 1.12 & 1.07 & \footnotesize 最温和 \\
-        triplet\_001 & game    & 1.44 & 1.17 & 1.07 & \\
-        triplet\_011 & federer & 1.45 & 1.11 & 1.07 & \\
-        triplet\_021 & jordan  & 1.71 & 1.31 & 1.20 & \\
-        triplet\_081 & river   & 1.73 & 1.23 & 1.18 & \\
-        triplet\_061 & war     & 1.81 & 1.21 & 1.18 & \\
-        triplet\_051 & song    & 1.86 & 1.29 & 1.19 & \\
-        triplet\_041 & league  & 1.99 & 1.42 & 1.20 & \\
-        triplet\_031 & episode & 2.03 & 1.39 & 1.19 & \\
-        \alert{triplet\_071} & \alert{storm}   & \alert{\textbf{2.44}} & \alert{\textbf{1.78}} & \alert{\textbf{1.25}} & \footnotesize 最严重 \\
+        最温和（\texttt{star}）    & 1.42 & 1.12 & 1.07 \\
+        \alert{最严重（\texttt{storm}）} & \alert{\textbf{2.44}} & \alert{\textbf{1.78}} & \alert{\textbf{1.25}} \\
+        \midrule
+        极差比                    & \textbf{1.72×} & 1.60× & 1.17× \\
         \bottomrule
     \end{tabular}
 
-    \vspace{0.8em}
-    \begin{itemize}\small
-        \item \textbf{C3 成立}：L1 跨 forget set 差 \textbf{1.72$\times$}、
-              L2 差 1.60$\times$、L3\_out 差 1.17$\times$ —— profile 是
-              forget set 的函数，不是算法常数。
-        \item 嵌入紧凑度（低 emb variance）与 L2 的 Spearman $\rho=0.50$
-              ($n=10$，CI 较宽，提示性证据）—— 已暗示\emph{几何可预测
-              corruption}（第二幕将正式化）。
-        \item 方法学含义：\alert{仅用单 forget set 给 unlearner 打分会显著
-              低估评分方差} $\Rightarrow$ suggests benchmark instability，
-              而非"系统性误报"。
-    \end{itemize}
+    \vspace{1.2em}
+    \begin{center}
+        \Large
+        同一算法，换 forget set，L1 副作用差 \alert{\textbf{1.7×}}。
+    \end{center}
 
     \vspace{0.4em}
-    \centering\footnotesize
-    \emph{小结}：C1 + C2 说明三层是\emph{有序且 L3 非平凡}的结构；C3 说明
-    profile 因 forget set 而异 $\Rightarrow$ \textbf{预测 profile 是良定义
-    问题}（$\to$ 第二幕）。
+    \begin{center}
+        \normalsize
+        $\Rightarrow$ profile 是 forget set 的函数，值得\emph{审计}。
+    \end{center}
 \end{frame}
 
 \begin{frame}{C3 可视化：10 个 forget set 的 profile}
@@ -278,36 +247,32 @@
     10 forget set 上 Leave-One-Out。
 \end{frame}
 
-\begin{frame}{审计结果：回归 + 排序}
+\begin{frame}{审计结果}
     \centering
-    \textbf{回归（LOO over 10 forget sets）}\\[0.3em]
-    \begin{tabular}{@{}lrrr@{}}
-        \toprule
-        审计目标 & $R^2$ & Spearman $\rho$ & Pearson $r$ \\
-        \midrule
-        L1 forget     & \textbf{+0.443} & +0.624 & +0.684 \\
-        L2 locality   & \textbf{+0.410} & +0.624 & +0.658 \\
-        L3 spillover  & +0.190          & \textbf{+0.612} & +0.512 \\
-        \bottomrule
-    \end{tabular}
-
-    \vspace{1.0em}
-    \textbf{排序（predicted rank vs. true rank）}\\[0.3em]
     \begin{tabular}{@{}lccc@{}}
         \toprule
-        Layer & Spearman $\rho$ & Top-1 命中 & Top-3 重合 \\
+        & L1 forget & L2 locality & L3 spillover \\
         \midrule
-        L1 forget     & +0.624 & \alert{\checkmark storm} & 2\,/\,3 \\
-        L2 locality   & +0.624 & $\times$ & 2\,/\,3 \\
-        L3 spillover  & +0.612 & $\times$ & 1\,/\,3 \\
+        $R^2$           & \textbf{+0.44} & \textbf{+0.41} & +0.19 \\
+        排序 Spearman $\rho$ & +0.62 & +0.62 & +0.61 \\
+        Top-1 命中       & \alert{\checkmark \, storm} & $\times$ & $\times$ \\
         \bottomrule
     \end{tabular}
 
-    \vspace{0.8em}
-    \footnotesize
-    L1 层 top-1 与真实排序一致（triplet\_071 storm，\emph{单观察点}，$n=10$）。
-    初步证据\emph{支持}审计器作为 \alert{排序 / 筛选工具} 的可行性；是否对更大
-    $n$、其他 unlearner、其他 base model 稳健，\emph{尚需验证}。
+    \vspace{1.2em}
+    \begin{center}
+        \Large
+        三层排序相关 $\rho \approx \textbf{0.62}$
+    \end{center}
+    \vspace{0.3em}
+    \begin{center}
+        \normalsize
+        L1 最严重的 forget set (\texttt{storm}) 被正确预测到。
+    \end{center}
+
+    \vspace{0.4em}
+    \footnotesize\centering\itshape
+    $n=10$，单观察点；$n\uparrow$、换 unlearner 的稳健性待验证。
 \end{frame}
 
 \begin{frame}{审计预测散点（LOO, Ridge, 12 维几何）}
