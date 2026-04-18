@@ -38,6 +38,13 @@ Ralph agent：每次迭代开始时阅读此文件，结束时更新此文件。
 - 下一步：<下一个任务 id>
 -->
 
+### 迭代 5 — 2026-04-18
+- 任务：阶段 5 结果汇报 —— 根据现有 audit 产物（n=10 代表 triplet，10 个 HDBSCAN cluster 各抽 1 个）重新生成 slides.tex 引用的三张图，并重新编译 slides.pdf。
+- 结果：pass。`python z-doc/figures/make_figures.py` 读取 `4.regression-predictor/audit/{part1_corruption_profile,part1_per_sample_layers,part2_audit_predictions}.csv` 再生成 `fig_three_layer_decay.pdf` / `fig_per_forget_profile.pdf` / `fig_audit_scatter.pdf`，三张 PDF 均有差异并已更新。`xelatex slides.tex` 连跑两遍无错，`slides.pdf` 26 页 341 KB。关键数字与 audit_summary.json 完全一致：L1 geo=1.762×、L2 geo=1.290×、L3 geo=1.158×；LOO R² = 0.443 / 0.410 / 0.190；ρ ≈ 0.62；coverage ρ=−0.42。README-CN.md / slides.tex 叙述无需改动。
+- 产物：`z-doc/figures/fig_*.pdf`、`z-doc/slides.pdf`
+- 备注：当前 n=10 源于 batch unlearn 仅对 `triplet_0{01,11,21,…,91}` 10 个 cluster 代表跑了 checkpoint；其余 90 个 triplet 候选池已生成但未 unlearn，属阶段 1–3 后续工作范畴。
+- 下一步：阶段 4 留出 checkpoint R²/MAE；若需将 n 从 10 扩到 100，需补跑其余 90 个 triplet 的 unlearn + PPL + 几何特征。
+
 ### 迭代 4 — 2026-04-18
 - 任务：阶段 5 —— 在全新克隆上完成最终端到端演练
 - 结果：pass。`git clone` 本仓至 `/tmp/fresh`，运行 `scripts/e2e_fresh_clone.sh` 顺序执行 analyze_corruption → corruption_from_geometry → audit_experiments → make_figures。为使得 fresh clone 能从 §9 步骤 1 起跑通（不重 unlearn），whitelist 并纳入了核心 artefact：`2.extract-ppl/{wikitext_cross_metrics_detail,corruption_summary}.json`、`4.regression-predictor/{audit,geometry}/{*.csv,*.json}`、`1.data-preparation/data/wikitext_hdbscan_triplets/{run_manifest.json, triplet_0[01-91]/}`（10 代表 triplet，合计 ≈1.2 MB）。fresh clone 输出的 L1/L2/L3 geo-mean、LOO R²/ρ、storm top-1、coverage ρ=−0.42 全部与主仓一致。
