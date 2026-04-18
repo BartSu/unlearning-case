@@ -17,7 +17,11 @@
 5. 更新 `PROGRESS.md`：
    - 勾选已完成的条目。
    - 在 **迭代日志** 下追加一条记录，包含：迭代编号、任务、结果、产物、下一步。
-6. 使用简短的提交信息提交更改（禁止使用 `--no-verify`）。
+6. 若本次迭代产生了新的实验数字（即 `4.regression-predictor/audit/` 或其他 artefact 被刷新），必须同步：
+   - 更新 `z-doc/README-CN.md` 与 `z-doc/slides.tex` 中所有引用的数字，使其与最新 `audit_summary.json` 一致。
+   - 在 `z-doc/` 目录下运行 `xelatex -interaction=nonstopmode slides.tex`（至少两遍以保证交叉引用），重新生成 `z-doc/slides.pdf`。
+   - 将 `slides.tex` 与 `slides.pdf` 一并纳入提交。
+7. 使用简短的提交信息提交更改（禁止使用 `--no-verify`）。
 
 ## 任务选择规则
 - 优先选择能够解锁下游阶段的任务。
