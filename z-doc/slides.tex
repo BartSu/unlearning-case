@@ -18,6 +18,8 @@
 \usepackage{xcolor}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,fit,backgrounds}
+\usepackage{graphicx}
+\graphicspath{{figures/}}
 
 \definecolor{mDarkTeal}{HTML}{23373B}
 \definecolor{mLightBrown}{HTML}{EB811B}
@@ -187,6 +189,16 @@
     \end{itemize}
 \end{frame}
 
+\begin{frame}{C1 + C2：三层衰减可视化}
+    \centering
+    \includegraphics[width=0.82\textwidth]{fig_three_layer_decay.pdf}
+
+    \vspace{0.4em}
+    \footnotesize
+    左轴：几何均值 $r$ 随层级严格递减（\textbf{C1}）；
+    右轴：$r>1.1$ 的样本比例在 L3 仍达 \alert{61.6\,\%}（\textbf{C2}：spillover 非平凡）。
+\end{frame}
+
 \begin{frame}{C3：三层 profile 随 forget set 而变（差 1.7$\times$）}
     \centering
     \scriptsize
@@ -225,6 +237,16 @@
     \emph{小结}：C1 + C2 说明三层是\emph{有序且 L3 非平凡}的结构；C3 说明
     profile 因 forget set 而异 $\Rightarrow$ \textbf{预测 profile 是良定义
     问题}（$\to$ 第二幕）。
+\end{frame}
+
+\begin{frame}{C3 可视化：10 个 forget set 的 profile}
+    \centering
+    \includegraphics[width=0.88\textwidth]{fig_per_forget_profile.pdf}
+
+    \vspace{0.3em}
+    \footnotesize
+    按 L1 升序排列；\alert{storm} 在三层上同时为最严重 forget set。
+    三层的极差比 $=$ L1 1.72$\times$ / L2 1.60$\times$ / L3 1.17$\times$。
 \end{frame}
 
 % ────────────────────────────────────────────────────────────────────────────
@@ -281,6 +303,16 @@
     L1 层 top-1 与真实排序一致（triplet\_071 storm，\emph{单观察点}，$n=10$）。
     初步证据\emph{支持}审计器作为 \alert{排序 / 筛选工具} 的可行性；是否对更大
     $n$、其他 unlearner、其他 base model 稳健，\emph{尚需验证}。
+\end{frame}
+
+\begin{frame}{审计预测散点（LOO, Ridge, 12 维几何）}
+    \centering
+    \includegraphics[width=0.96\textwidth]{fig_audit_scatter.pdf}
+
+    \vspace{0.2em}
+    \footnotesize
+    虚线为 $y=x$；三层均取得一致的 $\rho \approx 0.62$ 排序相关；L3 绝对
+    幅度小 $\Rightarrow$ $R^2$ 偏低，但\emph{相对排序}依然可用。
 \end{frame}
 
 \begin{frame}{Per-sample 对照：几何 $\gg$ 文本表面}
@@ -397,7 +429,7 @@
 
 \appendix
 
-\begin{frame}{附录 — 复现主结果}
+\begin{frame}[fragile]{附录 — 复现主结果}
     \footnotesize
 \begin{verbatim}
 # 0. Unlearn 与 cross-ppl（已完成可跳过）

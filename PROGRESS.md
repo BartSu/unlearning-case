@@ -24,7 +24,7 @@ Ralph agent：每次迭代开始时阅读此文件，结束时更新此文件。
 - [ ] 在留出检查点上报告 R² / MAE
 
 ### 阶段 5 — 结果汇报
-- [ ] 重新生成 `z-doc/slides.tex` 中引用的所有图表
+- [x] 重新生成 `z-doc/slides.tex` 中引用的所有图表
 - [x] 使用最新结果更新 `z-doc/README-CN.md`（已核对，数字与 audit_summary.json 一致）
 - [ ] 在全新克隆上完成最终端到端演练
 
@@ -37,6 +37,12 @@ Ralph agent：每次迭代开始时阅读此文件，结束时更新此文件。
 - 产物：<路径、commit 哈希>
 - 下一步：<下一个任务 id>
 -->
+
+### 迭代 3 — 2026-04-18
+- 任务：阶段 5 —— 重新生成 `z-doc/slides.tex` 中引用的所有图表
+- 结果：pass。新增 `z-doc/figures/make_figures.py`，从 `4.regression-predictor/audit/` 产出三张 PDF 图（三层衰减 / per–forget-set profile / 审计 LOO 散点），并在 slides.tex + README-CN.md 中以镜像方式嵌入。顺带修复 `附录 — 复现主结果` 帧缺失 `[fragile]` 导致 verbatim 报错的历史问题。xelatex 双次编译通过，slides.pdf 26 页，`pdftotext` 已确认三个新帧标题出现。
+- 产物：`z-doc/figures/{make_figures.py, fig_three_layer_decay.pdf, fig_per_forget_profile.pdf, fig_audit_scatter.pdf}`、`z-doc/slides.tex`、`z-doc/slides.pdf`、`z-doc/README-CN.md`
+- 下一步：阶段 5 剩余条目（全新克隆端到端演练）；阶段 4 剩余条目（留出 checkpoint 的 R²/MAE 报告）
 
 ### 迭代 2 — 2026-04-18
 - 任务：核对 `z-doc/README-CN.md` 与 `z-doc/slides.tex` 中的数字与当前 `audit_summary.json` 是否一致
