@@ -19,3 +19,4 @@ unlearn/logs_wikitext_unlearn/
 
 unlearn/*bak/
 unlearn/*results/
+*.log
