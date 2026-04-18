@@ -285,47 +285,49 @@
     幅度小 $\Rightarrow$ $R^2$ 偏低，但\emph{相对排序}依然可用。
 \end{frame}
 
-\begin{frame}{Per-sample 对照：几何 $\gg$ 文本表面}
+\begin{frame}{几何 vs 文本表面}
     \centering
-    \begin{tabular}{@{}lrr@{}}
+    \begin{tabular}{@{}lcc@{}}
         \toprule
-        设定 & 特征数 & LOGO $R^2$ \\
+        特征 & 维度 & $R^2$ \\
         \midrule
-        旧：261 维表格（含 per-text 表面统计）   & 261 & +0.142 \\
-        \textbf{新：16 维纯几何（forget + target↔forget）} & \textbf{16} & \textbf{+0.362} (GBM) \\
-        仅限 L3 跨簇样本（纯 spillover）         & 16  & +0.247 (RF) \\
+        文本表面统计        & 261          & +0.14 \\
+        \textbf{纯几何}     & \textbf{16}  & \textbf{+0.36} \\
         \bottomrule
     \end{tabular}
 
-    \vspace{1.0em}
-    \begin{block}{解读（谨慎）}
-        在当前设置下，几何特征以约 \alert{6\,\%} 的特征数带来 \alert{2.5$\times$}
-        的 $R^2$。这\emph{支持} "corruption 与 forget-set 几何比与文本表面
-        统计更相关" 的假设；在单 base model、单 unlearner、$n=10$ 下，尚不
-        足以断言 "corruption 是几何现象而非文本难度现象"。
-    \end{block}
-\end{frame}
-
-\begin{frame}{诚实负结果：Naive retain-coverage 不 work}
-    把 forget set 的 p95 内部 euclidean 当"高风险半径"，测 retain 落入比例：
-
-    \vspace{0.5em}
-    \begin{itemize}
-        \item 9\,/\,10 个 forget set 的 mean coverage $\approx 1.0$ —— 半径太大，
-              \emph{区分度归零}。
-        \item 与真实 L3 spillover 的相关：$\rho = \alert{-0.42}$（方向反了）。
-    \end{itemize}
+    \vspace{1.2em}
+    \begin{center}
+        \Large
+        特征少 \alert{16×}，$R^2$ 高 \alert{2.5×}
+    \end{center}
 
     \vspace{0.4em}
-    \textbf{原因}：HDBSCAN 簇在 384 维原空间里互相重叠，p95 半径 > 簇间距。
+    \begin{center}
+        \normalsize
+        corruption 更像\emph{几何}现象，而非文本难度现象。
+    \end{center}
+\end{frame}
 
-    \vspace{0.6em}
-    \textbf{改进方向}
-    \begin{enumerate}
-        \item 到 centroid 的\emph{带符号投影}，单尾切片而非球覆盖；
-        \item HDBSCAN 原生 mutual-reachability 距离；
-        \item 直接把 L3 predictor 当 calibrated per-text risk score。
-    \end{enumerate}
+\begin{frame}{诚实负结果：球覆盖不 work}
+    \vspace{0.5em}
+    \begin{center}
+        \large
+        试过：用 forget set 的半径圈 retain，看落入比例。
+    \end{center}
+
+    \vspace{0.8em}
+    \begin{center}
+        \large
+        结果：与真实 L3 的相关 $\rho = \alert{-0.42}$（\textbf{方向反了}）
+    \end{center}
+
+    \vspace{0.8em}
+    \begin{center}
+        \normalsize
+        原因：簇之间互相重叠，球太大 $\Rightarrow$ 几乎全覆盖。\\[0.3em]
+        改进：带符号投影 / mutual-reachability 距离。
+    \end{center}
 \end{frame}
 
 % ────────────────────────────────────────────────────────────────────────────
@@ -370,21 +372,24 @@
 \end{frame}
 
 \begin{frame}{论文定位}
-    \begin{itemize}
-        \item \textbf{Title（工作名）}：\emph{A Three-Layer View of Knowledge
-              Corruption in LLM Unlearning, and Why You Should Audit Before
-              You Forget.}
-        \item \textbf{Venue}：COLM 2025 / ACL short / EMNLP findings ——
-              empirical + analysis + methodological 三位一体。
-        \item \textbf{卖点（以当前证据强度措辞）}：
-              (1) 三层 view $+$ 61.6\,\% 的 L3 spillover 提示\emph{spillover
-                  不可忽略}；
-              (2) 把 unlearning benchmarking 重构为 \emph{forget-set audit}；
-              (3) 仅 forget-set 几何即可做排序级风险预测（LOO $\rho\approx 0.62$，
-                  L1 top-1 匹配为单观察点）。
-        \item \textbf{升档}：补到 $n=100$ + 第二个 unlearner
-              $\Rightarrow$ NeurIPS / ICML。
-    \end{itemize}
+    \begin{center}
+        \large
+        \emph{A Three-Layer View of Knowledge Corruption\\ in LLM Unlearning.}
+    \end{center}
+
+    \vspace{0.8em}
+    \textbf{三个卖点}
+    \begin{enumerate}
+        \item 三层 view + L3 61.6\,\% $\Rightarrow$ spillover \emph{不可忽略}
+        \item benchmarking $\to$ \textbf{forget-set audit} 视角转换
+        \item 仅几何就能排序预测（$\rho \approx 0.62$）
+    \end{enumerate}
+
+    \vspace{0.6em}
+    \begin{center}
+        \small
+        \textbf{升档}：$n$=10 $\to$ 100 + 第二个 unlearner $\Rightarrow$ NeurIPS / ICML
+    \end{center}
 \end{frame}
 
 % ────────────────────────────────────────────────────────────────────────────
