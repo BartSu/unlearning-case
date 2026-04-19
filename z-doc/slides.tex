@@ -91,25 +91,25 @@
     \vspace{0.8em}
     \begin{center}
         \Large
-        \textbf{L1 \;1.76×} \;→\; \textbf{L2 \;1.29×} \;→\; \textbf{L3 \;1.16×}
+        \textbf{L1 \;2.13×} \;→\; \textbf{L2 \;1.49×} \;→\; \textbf{L3 \;1.28×}
     \end{center}
 
     \vspace{0.8em}
     \begin{center}
         \normalsize
-        且 \alert{61.6\,\%} 的「无关」样本 PPL 也被抬高。
+        且 \alert{80.3\,\%} 的「无关」样本 PPL 也被抬高。
     \end{center}
 
     \vfill
     \footnotesize\itshape\centering
-    Llama-3.1-8B-Instruct · GradAscent · $n=10$ forget sets.
+    Llama-3.1-8B-Instruct · GradAscent · $n=50$ forget sets (10 HDBSCAN clusters × 5).
 \end{frame}
 
 \begin{frame}{动机：一句话}
     \vfill
     \begin{center}
         \Large
-        换个 forget set，副作用能差 \textbf{1.7×}。
+        换个 forget set，副作用能差 \textbf{近 4×}。
     \end{center}
 
     \vspace{0.6em}
@@ -207,16 +207,16 @@
         \toprule
         & L1 forget & L2 locality & L3 spillover \\
         \midrule
-        geo-mean $r$           & \textbf{1.76×} & \textbf{1.29×} & \textbf{1.16×} \\
-        被抬高（$>1.1×$）占比    & 95.6\,\%       & 82.8\,\%       & \alert{61.6\,\%} \\
+        geo-mean $r$           & \textbf{2.13×} & \textbf{1.49×} & \textbf{1.28×} \\
+        被抬高（$>1.1×$）占比    & 99.0\,\%       & 91.9\,\%       & \alert{80.3\,\%} \\
         \bottomrule
     \end{tabular}
 
     \vspace{1.2em}
     \begin{center}
         \large
-        \textbf{C1 成立}：1.76 $>$ 1.29 $>$ 1.16\\[0.4em]
-        \textbf{C2 成立}：L3 仍有 \alert{61.6\,\%} 样本被抬高
+        \textbf{C1 成立}：2.13 $>$ 1.49 $>$ 1.28\\[0.4em]
+        \textbf{C2 成立}：L3 仍有 \alert{80.3\,\%} 样本被抬高
     \end{center}
 \end{frame}
 
@@ -226,7 +226,7 @@
 
     \vspace{0.3em}
     \footnotesize
-    左轴：L1 $>$ L2 $>$ L3\quad|\quad右轴：L3 仍有 \alert{61.6\,\%} 被抬高。
+    左轴：L1 $>$ L2 $>$ L3\quad|\quad右轴：L3 仍有 \alert{80.3\,\%} 被抬高。
 \end{frame}
 
 \begin{frame}{C3：换个 forget set，副作用差多少？}
@@ -236,17 +236,17 @@
         \toprule
         & L1 & L2 & L3 \\
         \midrule
-        最温和（\texttt{star}）    & 1.42 & 1.12 & 1.07 \\
-        \alert{最严重（\texttt{storm}）} & \alert{\textbf{2.44}} & \alert{\textbf{1.78}} & \alert{\textbf{1.25}} \\
+        最温和（\texttt{star} 代表）    & 1.42 & 1.12 & 1.07 \\
+        \alert{最严重（\texttt{storm} 簇 075）} & \alert{\textbf{4.07}} & \alert{\textbf{2.94}} & \alert{\textbf{1.64}} \\
         \midrule
-        极差比                    & \textbf{1.72×} & 1.60× & 1.17× \\
+        极差比（$n=50$）           & \textbf{2.87×} & 2.82× & 1.54× \\
         \bottomrule
     \end{tabular}
 
     \vspace{1.2em}
     \begin{center}
         \Large
-        同一算法，换 forget set，L1 副作用差 \alert{\textbf{1.7×}}。
+        同一算法，换 forget set，L1 副作用差 \alert{\textbf{近 3×}}。
     \end{center}
 
     \vspace{0.4em}
@@ -262,7 +262,7 @@
 
     \vspace{0.3em}
     \footnotesize
-    按 L1 升序；\alert{storm} 三层同时最严重 $\Rightarrow$ 稳健坏 forget set。
+    按 L1 升序（$n=50$）；\alert{storm 簇} 在所有三层上集中最严重 triplet。
 \end{frame}
 
 % ────────────────────────────────────────────────────────────────────────────
@@ -334,28 +334,28 @@
         \toprule
         & L1 forget & L2 locality & L3 spillover \\
         \midrule
-        $R^2$ (audit / baseline $-0.24$) & \textbf{+0.44} & \textbf{+0.41} & +0.19 \\
-        MAE (audit / baseline)       & \textbf{0.19} / 0.27 & \textbf{0.12} / 0.15 & \textbf{0.05} / 0.06 \\
-        排序 Spearman $\rho$ & +0.62 & +0.62 & +0.61 \\
-        95\% CI ($n_\text{boot}=10$k) & [$-0.22$, $+0.93$] & [$+0.05$, $+0.90$] & [$-0.01$, $+0.96$] \\
-        Top-1 命中       & \alert{\checkmark \, storm} & $\times$ & $\times$ \\
+        $R^2$ (audit / baseline $-0.04$) & \textbf{+0.22} & \textbf{+0.30} & +0.05 \\
+        MAE (audit / baseline)       & \textbf{0.40} / 0.43 & \textbf{0.28} / 0.32 & \textbf{0.12} / 0.12 \\
+        排序 Spearman $\rho$ & +0.49 & +0.54 & +0.30 \\
+        95\% CI ($n_\text{boot}=10$k) & [$+0.22$, $+0.68$] & [$+0.29$, $+0.72$] & [$-0.01$, $+0.55$] \\
+        Top-1 命中       & $\times$ & $\times$ & $\times$ \\
         \bottomrule
     \end{tabular}
 
     \vspace{0.7em}
     \begin{center}
         \Large
-        三层 $R^2$ 全正、MAE 全线胜 LOO-mean baseline
+        L1 / L2 排序显著（CI 排除 0）；L3 仍边缘
     \end{center}
     \vspace{0.2em}
     \begin{center}
         \normalsize
-        但 $n=10$ CI 宽、L1 / L3 下界跨 0 $\Rightarrow$ \alert{排序级粗筛信号}，$n=100$ 收紧。
+        三层 $R^2$ 全正、胜 LOO-mean baseline；$n=100$ 可继续收紧 L3。
     \end{center}
 
     \vspace{0.2em}
     \footnotesize\centering\itshape
-    Held-out: LOO over 10 clusters, Ridge $\alpha=1$, 12-d forget geometry.
+    Held-out: LOO over 50 triplets ($10\text{ clusters} \times 5$), Ridge $\alpha=1$, 12-d forget geometry.
 \end{frame}
 
 \begin{frame}{审计器的定位：预警器，不是替代品}
@@ -365,7 +365,7 @@
         \toprule
          & \textbf{能做} & \textbf{不能做} \\
         \midrule
-        \textbf{排序} & 谁比谁严重 ($\rho \approx 0.62$) & 绝对数值 \\
+        \textbf{排序} & 谁比谁严重 (L1/L2 $\rho \approx 0.49\text{--}0.54$) & 绝对数值 \\
         \textbf{粗筛} & 红 / 黄 / 绿三档预警 & 给 unlearn 打分 \\
         \textbf{省算力} & 1 秒 vs. 数 GPU-hour & 省掉最终 unlearn \\
         \bottomrule
@@ -391,7 +391,7 @@
 
     \vspace{0.2em}
     \footnotesize
-    虚线 $y=x$；三层 $\rho \approx 0.62$；L3 幅度小、排序仍可用。
+    虚线 $y=x$；L1/L2 $\rho \approx 0.49\text{--}0.54$；L3 $\rho = 0.30$ 边缘。
 \end{frame}
 
 \begin{frame}{几何 vs 文本表面}
@@ -428,7 +428,7 @@
     \vspace{0.8em}
     \begin{center}
         \large
-        结果：与真实 L3 的相关 $\rho = \alert{-0.42}$（\textbf{方向反了}）
+        结果：与真实 L3 的相关 $\rho = \alert{-0.27}$（\textbf{方向反了}）
     \end{center}
 
     \vspace{0.8em}
@@ -473,7 +473,7 @@
         \setlength\itemsep{0.6em}
         \item 单 base model（Llama-3.1-8B-Instruct）
         \item 单 unlearner（GradAscent）
-        \item 单 $n = 10$ forget sets（CI 较宽）
+        \item $n = 50$ forget sets（L1/L2 CI 已显著，L3 仍边缘）
         \item 单指标 PPL（$\neq$ QA 准确率）
     \end{itemize}
 \end{frame}
@@ -488,7 +488,7 @@
     \vspace{0.6em}
     \begin{enumerate}
         \setlength\itemsep{0.5em}
-        \item $n: 10 \to 100$（100 triplet 已生成）
+        \item $n: 50 \to 100$（100 triplet 已全部 unlearn，待扩 cross-eval）
         \item 加 NPO / GradDiff 验证审计器稳健
         \item PPL $\to$ QA accuracy（\texttt{2.extract-qa/} 已就位）
         \item \emph{audit-driven} forget 选择：挑预测 L3 最低的 $\mathcal{D}_f$
@@ -504,15 +504,15 @@
     \vspace{0.8em}
     \textbf{三个卖点}
     \begin{enumerate}
-        \item 三层 view + L3 61.6\,\% $\Rightarrow$ spillover \emph{不可忽略}
+        \item 三层 view + L3 80.3\,\% $\Rightarrow$ spillover \emph{不可忽略}
         \item benchmarking $\to$ \textbf{forget-set audit} 视角转换
-        \item 仅几何就能排序预测（$\rho \approx 0.62$）
+        \item 仅几何就能排序预测（L1/L2 $\rho \approx 0.49\text{--}0.54$，CI 显著排除 0）
     \end{enumerate}
 
     \vspace{0.6em}
     \begin{center}
         \small
-        \textbf{升档}：$n$=10 $\to$ 100 + 第二个 unlearner $\Rightarrow$ NeurIPS / ICML
+        \textbf{升档}：$n$=50 $\to$ 100 + 第二个 unlearner $\Rightarrow$ NeurIPS / ICML
     \end{center}
 \end{frame}
 
@@ -520,8 +520,8 @@
 \begin{frame}[standout]
     三层衰减，但不归零。\\[0.5em]
     \normalsize
-    \textbf{1.76× → 1.29× → 1.16×}\\[0.3em]
-    审计 $\rho \approx 0.62$，无需 unlearn。
+    \textbf{2.13× → 1.49× → 1.28×}\\[0.3em]
+    审计 L1/L2 $\rho \approx 0.49\text{--}0.54$（CI 显著），无需 unlearn。
 \end{frame}
 
 \appendix

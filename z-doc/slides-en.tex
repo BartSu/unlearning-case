@@ -85,25 +85,25 @@
     \vspace{0.8em}
     \begin{center}
         \Large
-        \textbf{L1 \;1.76$\times$} \;$\to$\; \textbf{L2 \;1.29$\times$} \;$\to$\; \textbf{L3 \;1.16$\times$}
+        \textbf{L1 \;2.13$\times$} \;$\to$\; \textbf{L2 \;1.49$\times$} \;$\to$\; \textbf{L3 \;1.28$\times$}
     \end{center}
 
     \vspace{0.8em}
     \begin{center}
         \normalsize
-        And \alert{61.6\,\%} of ``irrelevant'' samples still see elevated PPL.
+        And \alert{80.3\,\%} of ``irrelevant'' samples still see elevated PPL.
     \end{center}
 
     \vfill
     \footnotesize\itshape\centering
-    Llama-3.1-8B-Instruct $\cdot$ GradAscent $\cdot$ $n=10$ forget sets.
+    Llama-3.1-8B-Instruct $\cdot$ GradAscent $\cdot$ $n=50$ forget sets (10 HDBSCAN clusters $\times$ 5).
 \end{frame}
 
 \begin{frame}{Motivation in one line}
     \vfill
     \begin{center}
         \Large
-        Switch the forget set $\Rightarrow$ side-effects differ by \textbf{1.7$\times$}.
+        Switch the forget set $\Rightarrow$ side-effects differ by \textbf{near 4$\times$}.
     \end{center}
 
     \vspace{0.6em}
@@ -201,16 +201,16 @@
         \toprule
         & L1 forget & L2 locality & L3 spillover \\
         \midrule
-        geo-mean $r$              & \textbf{1.76$\times$} & \textbf{1.29$\times$} & \textbf{1.16$\times$} \\
-        fraction raised ($>1.1\times$) & 95.6\,\%       & 82.8\,\%       & \alert{61.6\,\%} \\
+        geo-mean $r$              & \textbf{2.13$\times$} & \textbf{1.49$\times$} & \textbf{1.28$\times$} \\
+        fraction raised ($>1.1\times$) & 99.0\,\%       & 91.9\,\%       & \alert{80.3\,\%} \\
         \bottomrule
     \end{tabular}
 
     \vspace{1.2em}
     \begin{center}
         \large
-        \textbf{C1 holds}: 1.76 $>$ 1.29 $>$ 1.16\\[0.4em]
-        \textbf{C2 holds}: L3 still raises \alert{61.6\,\%} of samples
+        \textbf{C1 holds}: 2.13 $>$ 1.49 $>$ 1.28\\[0.4em]
+        \textbf{C2 holds}: L3 still raises \alert{80.3\,\%} of samples
     \end{center}
 \end{frame}
 
@@ -220,7 +220,7 @@
 
     \vspace{0.3em}
     \footnotesize
-    Left axis: L1 $>$ L2 $>$ L3\quad|\quad Right axis: L3 still raises \alert{61.6\,\%}.
+    Left axis: L1 $>$ L2 $>$ L3\quad|\quad Right axis: L3 still raises \alert{80.3\,\%}.
 \end{frame}
 
 \begin{frame}{C3: how much does side-effect vary across forget sets?}
@@ -230,17 +230,17 @@
         \toprule
         & L1 & L2 & L3 \\
         \midrule
-        mildest (\texttt{star})    & 1.42 & 1.12 & 1.07 \\
-        \alert{worst (\texttt{storm})} & \alert{\textbf{2.44}} & \alert{\textbf{1.78}} & \alert{\textbf{1.25}} \\
+        mildest (\texttt{star} rep)    & 1.42 & 1.12 & 1.07 \\
+        \alert{worst (\texttt{storm} cluster 075)} & \alert{\textbf{4.07}} & \alert{\textbf{2.94}} & \alert{\textbf{1.64}} \\
         \midrule
-        spread (max / min)         & \textbf{1.72$\times$} & 1.60$\times$ & 1.17$\times$ \\
+        spread ($n=50$, max / min)     & \textbf{2.87$\times$} & 2.82$\times$ & 1.54$\times$ \\
         \bottomrule
     \end{tabular}
 
     \vspace{1.2em}
     \begin{center}
         \Large
-        Same algorithm, different forget sets $\Rightarrow$ L1 differs by \alert{\textbf{1.7$\times$}}.
+        Same algorithm, different forget sets $\Rightarrow$ L1 differs by \alert{\textbf{nearly 3$\times$}}.
     \end{center}
 
     \vspace{0.4em}
@@ -256,7 +256,7 @@
 
     \vspace{0.3em}
     \footnotesize
-    Sorted by L1; \alert{storm} is the worst across all three layers $\Rightarrow$ robust bad forget set.
+    Sorted by L1 ($n=50$); the \alert{storm} cluster concentrates the worst triplets across all layers.
 \end{frame}
 
 % ────────────────────────────────────────────────────────────────────────────
@@ -328,28 +328,28 @@
         \toprule
         & L1 forget & L2 locality & L3 spillover \\
         \midrule
-        $R^2$ (audit / baseline $-0.24$) & \textbf{+0.44} & \textbf{+0.41} & +0.19 \\
-        MAE (audit / baseline)   & \textbf{0.19} / 0.27 & \textbf{0.12} / 0.15 & \textbf{0.05} / 0.06 \\
-        rank Spearman $\rho$     & +0.62 & +0.62 & +0.61 \\
-        95\% CI ($n_\text{boot}=10$k) & [$-0.22$, $+0.93$] & [$+0.05$, $+0.90$] & [$-0.01$, $+0.96$] \\
-        Top-1 hit                & \alert{\checkmark \, storm} & $\times$ & $\times$ \\
+        $R^2$ (audit / baseline $-0.04$) & \textbf{+0.22} & \textbf{+0.30} & +0.05 \\
+        MAE (audit / baseline)   & \textbf{0.40} / 0.43 & \textbf{0.28} / 0.32 & \textbf{0.12} / 0.12 \\
+        rank Spearman $\rho$     & +0.49 & +0.54 & +0.30 \\
+        95\% CI ($n_\text{boot}=10$k) & [$+0.22$, $+0.68$] & [$+0.29$, $+0.72$] & [$-0.01$, $+0.55$] \\
+        Top-1 hit                & $\times$ & $\times$ & $\times$ \\
         \bottomrule
     \end{tabular}
 
     \vspace{0.7em}
     \begin{center}
         \Large
-        All three layers: $R^2 > 0$ and MAE beats LOO-mean baseline
+        L1 / L2 rank signals \emph{significant} (CI exclude 0); L3 borderline
     \end{center}
     \vspace{0.2em}
     \begin{center}
         \normalsize
-        But at $n=10$ CI is wide, L1 / L3 lower bounds cross 0 $\Rightarrow$ \alert{rank-level screening signal}; $n=100$ needed to tighten.
+        All three layers beat LOO-mean baseline; scaling to $n=100$ to tighten L3.
     \end{center}
 
     \vspace{0.2em}
     \footnotesize\centering\itshape
-    Held-out: LOO over 10 clusters, Ridge $\alpha=1$, 12-d forget geometry.
+    Held-out: LOO over 50 triplets ($10\text{ clusters} \times 5$), Ridge $\alpha=1$, 12-d forget geometry.
 \end{frame}
 
 \begin{frame}{Positioning: a warning tool, not a replacement}
@@ -359,7 +359,7 @@
         \toprule
          & \textbf{Can} & \textbf{Cannot} \\
         \midrule
-        \textbf{Rank}    & tell who is worse ($\rho \approx 0.62$) & absolute value \\
+        \textbf{Rank}    & tell who is worse (L1/L2 $\rho \approx 0.49\text{--}0.54$) & absolute value \\
         \textbf{Screen}  & red / yellow / green warnings           & score an unlearner \\
         \textbf{Save compute} & 1 s vs. GPU-hours                  & replace the final unlearn \\
         \bottomrule
@@ -385,7 +385,7 @@
 
     \vspace{0.2em}
     \footnotesize
-    Dashed line $y=x$; all three layers $\rho \approx 0.62$; L3 has small magnitude but ranking still usable.
+    Dashed line $y=x$; L1/L2 $\rho \approx 0.49\text{--}0.54$; L3 $\rho = 0.30$ borderline.
 \end{frame}
 
 \begin{frame}{Geometry vs. surface text}
@@ -422,7 +422,7 @@
     \vspace{0.8em}
     \begin{center}
         \large
-        Got: correlation with true L3 is $\rho = \alert{-0.42}$ (\textbf{wrong sign}).
+        Got: correlation with true L3 is $\rho = \alert{-0.27}$ (\textbf{wrong sign}).
     \end{center}
 
     \vspace{0.8em}
@@ -467,7 +467,7 @@
         \setlength\itemsep{0.6em}
         \item single base model (Llama-3.1-8B-Instruct)
         \item single unlearner (GradAscent)
-        \item single $n = 10$ forget sets (wide CI)
+        \item $n = 50$ forget sets (L1/L2 CI tight, L3 still borderline)
         \item single metric: PPL ($\neq$ QA accuracy)
     \end{itemize}
 \end{frame}
@@ -482,7 +482,7 @@
     \vspace{0.6em}
     \begin{enumerate}
         \setlength\itemsep{0.5em}
-        \item $n: 10 \to 100$ (100 triplets already generated)
+        \item $n: 50 \to 100$ (all 100 unlearned, extending cross-eval matrix)
         \item add NPO / GradDiff to check auditor robustness
         \item PPL $\to$ QA accuracy (\texttt{2.extract-qa/} ready)
         \item \emph{audit-driven} forget-set selection: pick $\mathcal{D}_f$ with lowest predicted L3
@@ -498,15 +498,15 @@
     \vspace{0.8em}
     \textbf{Three selling points}
     \begin{enumerate}
-        \item three-layer view + L3 at 61.6\,\% $\Rightarrow$ spillover \emph{non-negligible}
+        \item three-layer view + L3 at 80.3\,\% $\Rightarrow$ spillover \emph{non-negligible}
         \item benchmarking $\to$ \textbf{forget-set audit} perspective shift
-        \item geometry alone gives rank-level prediction ($\rho \approx 0.62$)
+        \item geometry alone ranks corruption (L1/L2 $\rho \approx 0.49\text{--}0.54$, CI excludes 0)
     \end{enumerate}
 
     \vspace{0.6em}
     \begin{center}
         \small
-        \textbf{Upgrade}: $n$=10 $\to$ 100 + second unlearner $\Rightarrow$ NeurIPS / ICML
+        \textbf{Upgrade}: $n$=50 $\to$ 100 + second unlearner $\Rightarrow$ NeurIPS / ICML
     \end{center}
 \end{frame}
 
@@ -514,8 +514,8 @@
 \begin{frame}[standout]
     Three-layer decay, but never zero.\\[0.5em]
     \normalsize
-    \textbf{1.76$\times$ $\to$ 1.29$\times$ $\to$ 1.16$\times$}\\[0.3em]
-    Audit $\rho \approx 0.62$, no unlearn needed.
+    \textbf{2.13$\times$ $\to$ 1.49$\times$ $\to$ 1.28$\times$}\\[0.3em]
+    Audit L1/L2 $\rho \approx 0.49\text{--}0.54$ (CI significant), no unlearn needed.
 \end{frame}
 
 \appendix
