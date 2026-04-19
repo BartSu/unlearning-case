@@ -10,19 +10,23 @@ SAVES_DIR=/media/volume/llm/unlearning/1.data-preparation/unlearn/saves/wikitext
 LOGDIR=/media/volume/llm/unlearning/2.extract-ppl/logs_n50
 mkdir -p "$LOGDIR"
 
-echo "[$(date -Is)] START baseline (50 triplets, resume)" | tee -a "$LOGDIR/run.log"
+BATCH_SIZE=16
+
+echo "[$(date -Is)] START baseline (50 triplets, resume, bs=$BATCH_SIZE)" | tee -a "$LOGDIR/run.log"
 python eval_wikitext_perplexity.py \
     --baseline \
     --data_dir "$DATA_DIR" \
     --triplets "$TRIPLETS" \
+    --batch_size "$BATCH_SIZE" \
     --resume \
     2>&1 | tee -a "$LOGDIR/baseline.log"
 
-echo "[$(date -Is)] START cross-eval (50x50, resume)" | tee -a "$LOGDIR/run.log"
+echo "[$(date -Is)] START cross-eval (50x50, resume, bs=$BATCH_SIZE)" | tee -a "$LOGDIR/run.log"
 python eval_wikitext_perplexity.py \
     --saves_dir "$SAVES_DIR" \
     --data_dir "$DATA_DIR" \
     --triplets "$TRIPLETS" \
+    --batch_size "$BATCH_SIZE" \
     --resume \
     2>&1 | tee -a "$LOGDIR/cross.log"
 
