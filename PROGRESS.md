@@ -72,6 +72,11 @@ Ralph agent：每次迭代开始时阅读此文件，结束时更新此文件。
 
 ## 迭代日志
 
+### 迭代 14 — 2026-04-19（reporter：同步 held-out R²/MAE 到 z-doc 三份）
+- 任务：stage5-audit 迭代 11（held-out R²/MAE vs LOO-mean baseline）的文档同步。
+- 结果：pass。`z-doc/README-CN.md` §5.3 在 bootstrap CI 表后新增 "Held-out R² / MAE" 对照表（audit vs baseline，L1 +0.44/−0.24，L2 +0.41/−0.24，L3 +0.19/−0.24；MAE 全线 audit 更低）+ 解读段落。`slides.tex` / `slides-en.tex` 「审计结果 / Audit results」表格加入 MAE 行（audit/baseline 并列），R² 行标注 baseline=−0.24，headline 改为 "三层 R² 全正、MAE 全线胜 baseline；n=10 CI 宽 ⇒ 排序级粗筛"。两份 PDF 各 xelatex 跑两遍（均 29 页）。
+- 产物：`z-doc/{README-CN.md, slides.tex, slides-en.tex, slides.pdf, slides-en.pdf}`
+
 ### 迭代 13 — 2026-04-19（reporter：同步 bootstrap CI 到 z-doc 三份）
 - 任务：stage5-audit 汇报迭代 8（bootstrap 95% CI）之后的文档同步。
 - 结果：pass。`z-doc/README-CN.md` §5.3 新增 CI 小表（L1 [−0.22,+0.93]、L2 [+0.05,+0.90]、L3 [−0.01,+0.96]）+ 解读段落；`slides.tex` / `slides-en.tex` 在「审计结果 / Audit results」表格中插入 95% CI 行，headline 从 "三层 ρ≈0.62" 改为 "ρ≈0.62，但 n=10 下 CI 宽 ⇒ 排序级粗筛信号"。两份 PDF 各 xelatex 跑两遍（29 页）。
