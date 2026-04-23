@@ -1,0 +1,20 @@
+**/__pycache__/
+
+# Unlearning saves and logs (large model checkpoints)
+unlearn/saves/
+unlearn/logs_wikitext/
+unlearn/logs_wikitext_unlearn/
+unlearn/logs_wikitext_unlearn_batch/
+unlearn/logs_wikitext_unlearn_sample/
+unlearn/logs_wikitext_unlearn_tofu/
+unlearn/logs_wikitext_unlearn_bak/
+unlearn/run.pid
+
+unlearn/*bak/
+unlearn/*results/
+*.log
+
+# open-unlearning framework local outputs
+open-unlearning/saves/
+open-unlearning/logs/
+open-unlearning/wandb/

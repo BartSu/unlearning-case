@@ -1,0 +1,41 @@
+# @package _global_
+
+defaults:
+  - override /model: Llama-3.1-8B-Instruct
+  - override /trainer: GradAscent
+  - override /data: unlearn
+  - override /data/datasets@data.forget: WIKITEXT
+  - override /data/datasets@data.retain: WIKITEXT
+  - override /eval: lm_eval
+
+triplet_name: triplet_001
+
+data:
+  anchor: forget
+  forget:
+    WIKITEXT:
+      args:
+        hf_args:
+          data_files: /media/volume/llm/unlearning/data-preparation/data/wikitext_hdbscan_triplets/${triplet_name}/train.json
+  retain:
+    WIKITEXT:
+      args:
+        hf_args:
+          data_files: /media/volume/llm/unlearning/data-preparation/data/wikitext_hdbscan_triplets/${triplet_name}/validation.json
+
+eval:
+  lm_eval:
+    tasks: []
+
+trainer:
+  args:
+    per_device_train_batch_size: 4
+    gradient_accumulation_steps: 8
+    learning_rate: 1e-5
+    num_train_epochs: 10
+    lr_scheduler_type: constant
+    eval_strategy: "no"
+    do_eval: false
+    eval_on_start: false
+
+task_name: ???
