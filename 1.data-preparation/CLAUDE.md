@@ -29,10 +29,12 @@
 
 ```
 1.data-preparation/
-├── README.md                           # 人读的对外说明
-├── CLAUDE.md                           # 本文件
+├── CLAUDE.md                           # 本文件（阶段 ① 唯一文档入口）
 ├── .gitignore                          # 只白名单 10 个审计代表 triplet + manifest
 └── data/
+    ├── scripts/                        # 数据生成管线代码（见下方章节）
+    │   ├── 0.data_download.py  …  8.qa.py
+    │   └── _hdbscan_pipeline_utils.py
     └── wikitext_hdbscan_triplets/
         ├── run_manifest.json           # provenance（上游路径 + 所有超参 + 每 triplet 元信息）
         └── triplet_001 … triplet_100/
@@ -41,7 +43,29 @@
             └── test.json               # held-out probe  (50)
 ```
 
-其他 `data/wikitext_*` 子目录（`wikitext_raw / filtered / embeddings / reduced / clusters_hdbscan*`）是**生成物**，本仓库 `.gitignore` 掉，不在 git 里。它们可以通过 `run_manifest.json.source` 中的路径回溯，但本阶段**不负责**重生成它们。
+其他 `data/wikitext_*` 子目录（`wikitext_raw / filtered / embeddings / reduced / clusters_hdbscan*`）是 `data/scripts/` 跑出来的**上游生成物**，本仓库 `.gitignore` 掉、不进 git，存档路径写在 `run_manifest.json.source` 里，不保证能从仓库内部重生成。
+
+## 数据生成管线代码（`data/scripts/`）
+
+10 个脚本 + 1 个 utils，和 manifest.source 里的上游路径一一对应。**scripts 是工具，manifest 是产物**，「已冻结」规则约束的是产物，不是工具。
+
+| 脚本 | 产物 | manifest.source 对应键 |
+|---|---|---|
+| `0.data_download.py` | WikiText-103 原始文本 | `wikitext_raw/`（未列入 source） |
+| `1.filter.py` | 过滤后的文本 + offsets | `filtered_texts_jsonl`, `filtered_offsets_npy` |
+| `2.embed.py` | sentence embeddings | `wikitext_embeddings/`（未列入 source） |
+| `3.reduce_dimension.py` | 降维向量（此管线 `reducer=null`） | `reduced_vectors_path` |
+| `4.cluster.py` | HDBSCAN 标签 + 距离 | `cluster_labels_path`, `cluster_distances_path` |
+| `5.summarize.py` | 簇关键词 / domain 名 | `cluster_summary_json` |
+| `6.export.py` | 簇-样本映射 csv | `cluster_assignments_csv`, `export_manifest_json` |
+| `7.generate_triplet.py` | **本目录唯一持久产物** | `data/wikitext_hdbscan_triplets/` 全部 |
+| `8.qa.py` | manifest QA / 数据健康检查 | — |
+| `_hdbscan_pipeline_utils.py` | 公共工具 | — |
+
+**重跑规则**（「已冻结」的实操补充）：
+- 不要为了"试新配置"在本地直接跑脚本、把新 manifest 覆盖旧的 —— 会悄悄失去 provenance。
+- 要重跑，先在 `PROGRESS.md` 开任务、备份旧 manifest、在**新目录**下跑，产出新 manifest，再在 STATE.md 里切换指向。
+- manifest.source 里的路径是绝对路径（`/media/volume/llm/unlearning/data-preparation/data/...`），换机器重跑前先核对这些路径是否仍有效。
 
 ## `.gitignore` 白名单策略
 
