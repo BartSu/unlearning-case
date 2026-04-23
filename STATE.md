@@ -4,6 +4,29 @@
 > 任务清单和完整历史在 [`PROGRESS.md`](PROGRESS.md)，迭代规则在 [`CLAUDE.md`](CLAUDE.md)。
 ---
 
+## Pipeline 架构 —— 两条 path，共用阶段 ⑤
+
+整个项目是"**训练一个 forget-set audit 预测器**"的 pipeline，五阶段分成两条闭环：
+
+```
+训练审计器：   ①  →  ②  →  ③  ────────────→  ⑤
+                                                 ↑
+部署审计器：   ①  ──────────────→  ④  ─────────┘
+```
+
+| Path | 阶段 | 产物 | 角色 |
+|---|---|---|---|
+| **训练闭环** | ① → ② → ③ → ⑤ | 三层 ground truth `(L1, L2, L3)` → 监督信号 `y` | **建模**：学 `几何 → corruption` 的映射 |
+| **部署闭环** | ① → ④ → ⑤ (推理) | forget-set 特征 `X`（纯文本/embedding） | **推理**：新 forget set 只走特征 → 审计器给预测 |
+
+**关键解耦**：阶段 ④ 的 scripts **只读 triplet 原文本**，**从不** import 阶段 ② 的 ckpt 路径、**从不**读阶段 ③ 的 JSON。这保证 `extract_features(forget)` 是一个**纯函数**，秒级、无需 GPU unlearn —— 这就是 Act II「不跑 unlearn 只看 forget set 几何」主张能成立的代码前提。
+
+**审计器的价值在部署 path**：训练 path 贵（② ③ 要真跑 unlearn + N×N cross-eval），但只做**一次**；之后对每个候选 forget set，部署 path 只要 ~秒级推理就能排序预警。这是"粗筛 → 只对 top-k 真跑 unlearn"的算力账本。
+
+阶段 ⑤ 是**两条 path 的唯一交汇点**：训练时它 JOIN `(X from ④, y from ③)` 做回归；推理时它只读 `X from ④` 出预测。任何改动阶段 ⑤ 的 API / feature 列 / 回归器，都同时影响训练和部署，需要对齐。
+
+---
+
 ## 数据准备（阶段 ①）
 
 **状态**：✅ **冻结** —— 数据集、manifest、目录边界均已落定，下游（阶段 ②③）可直接消费。本阶段的规则 / 契约 / 硬性要求写在 [`1.data-preparation/CLAUDE.md`](1.data-preparation/CLAUDE.md)（子目录 CLAUDE）。
@@ -94,3 +117,15 @@
 **当前进度**：新配置（`max_steps=5`）下**尚未跑任何 triplet**。盘上 `saves/wikitext_unlearn_tofu/triplet_001_..._tofu/` 是旧 `max_steps=3` 产物，如需对齐新配置需先删该目录再重跑。历史 100 浅配置 ckpt（`saves/wikitext_unlearn/`，max_steps=2 / epoch=1）仍在盘上。
 
 写满 100 个 Llama-8B ckpt 需要 **~1.6 TB** 存储，与现有 `saves/wikitext_unlearn/` 同量级。如果保留现有浅 ckpt + 新 TOFU ckpt，盘占倍增，必要时先挑一个归档/删除。
+
+---
+
+## 阶段 ③ 推理评测（TODO）
+
+**当前主线**：[`3.inference/extract-ppl/`](3.inference/extract-ppl) —— PPL-based cross-metrics（10×10 评测矩阵，L1/L2/L3 三层 corruption ground truth）。
+
+**TODO：QA-based label 评测**（[`3.inference/extract-qa/`](3.inference/extract-qa)）
+- **动机**：PPL 上升只代表"对该文本 loss 变差"，不直接证明模型"真的忘掉了"——可能只是分布偏移/崩坏。QA label 是**可验证**的遗忘信号：给定 forget 文档衍生的问题，看模型是否还能答对。
+- **当前落地**：`scripts/eval_wikitext_qa.py` + `summarize_qa_labels.py` 已有初版，`wikitext_qa_baseline.json` / `qa_summary_*.{csv,json}` 是 base 模型的 QA 基线。尚未与 unlearn ckpt 对接跑 before/after 对照，也未纳入 audit 回归的 ground-truth。
+- **待决**：(1) QA 标签是否替代 PPL 作为 L1/L2/L3 的 primary ground truth，还是作为 PPL 的 **并行**视角（两者都报）；(2) QA 产生流程是否要重跑（当前 baseline 的 QA prompt / 判对规则未在本 STATE 登记）；(3) 与几何审计器的对接：QA-drop 是否也能被 forget-set 几何预测。
+- **优先级**：阶段 ② 100 triplet unlearn + 阶段 ③ PPL 跑完、主管线数字稳定后再启动；现在不挤占阶段 ② 的决策路径。
