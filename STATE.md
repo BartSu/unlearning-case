@@ -6,24 +6,32 @@
 
 ## Pipeline 架构 —— 两条 path，共用阶段 ⑤
 
-整个项目是"**训练一个 forget-set audit 预测器**"的 pipeline，五阶段分成两条闭环：
+整个项目是"**训练一个 forget-set audit 预测器**"的 pipeline。五阶段在**两条** path 上运转：
 
 ```
-训练审计器：   ①  →  ②  →  ③  ────────────→  ⑤
+训练审计器：  ①  →  ②  →  ③  ────────────→  ⑤   (y from ③, X 在 ⑤ 内部现算)
                                                  ↑
-部署审计器：   ①  ──────────────→  ④  ─────────┘
+部署审计器：  ①  ──────────────────────────────┘   (X 现算，秒级；不跑 unlearn)
 ```
 
 | Path | 阶段 | 产物 | 角色 |
 |---|---|---|---|
 | **训练闭环** | ① → ② → ③ → ⑤ | 三层 ground truth `(L1, L2, L3)` → 监督信号 `y` | **建模**：学 `几何 → corruption` 的映射 |
-| **部署闭环** | ① → ④ → ⑤ (推理) | forget-set 特征 `X`（纯文本/embedding） | **推理**：新 forget set 只走特征 → 审计器给预测 |
+| **部署闭环** | ① → ⑤ (推理) | 新 forget set 的文本 → ⑤ 内部 embed + 算几何 → 审计器给预测 | **推理**：对新 forget set 秒级排序预警 |
 
-**关键解耦**：阶段 ④ 的 scripts **只读 triplet 原文本**，**从不** import 阶段 ② 的 ckpt 路径、**从不**读阶段 ③ 的 JSON。这保证 `extract_features(forget)` 是一个**纯函数**，秒级、无需 GPU unlearn —— 这就是 Act II「不跑 unlearn 只看 forget set 几何」主张能成立的代码前提。
+**Paper headline 的 X 是 12 维 forget-set 内禀几何**（`emb_variance_mean / pairwise_sim_mean / centroid_norm / effective_rank / isotropy / spread_over_centroid` 等），**在 [`5.audit/regression-predictor/4.audit_experiments.py`](5.audit/regression-predictor/4.audit_experiments.py) 内部现算**（Sentence-Transformer `all-MiniLM-L6-v2` embed + 几何统计 → `audit/part2_forget_features.csv`）。**不**依赖阶段 ④ 的 `features.csv`。
+
+**阶段 ④（`4.feature-engineering/features.csv`，262 维）是 ablation 对照的 feature store**，被 `1.training_data.py` + `2.train_rf.py` 消费，用于跑"262 维 surface+几何混合 RF"作为 paper 的旁路基线（回答"如果把一切 surface 特征都喂给 RF，比纯 12 维几何强多少？" —— 目前的答案是：surface 主要学 text-hardness，不是 forget-set 数据性质）。**不**在 paper headline 路径上。
+
+**关键解耦**：阶段 ⑤ 的 headline 脚本 `4.audit_experiments.py` **只读**
+- 阶段 ① 的 `1.data-preparation/.../triplet_NNN/train.json`（forget set 原文本）
+- 阶段 ③ 的 `3.inference/extract-ppl/wikitext_cross_metrics_detail.json`（y）
+
+**从不 import** 阶段 ② 的 ckpt 路径、**从不**读阶段 ④ 的产物。这让 `extract_12d_geometry(forget_set_text)` 成为一个**纯函数**（秒级、不跑 GPU unlearn），这正是 Act II「不跑 unlearn 只看 forget set 几何」主张能成立的代码前提。
 
 **审计器的价值在部署 path**：训练 path 贵（② ③ 要真跑 unlearn + N×N cross-eval），但只做**一次**；之后对每个候选 forget set，部署 path 只要 ~秒级推理就能排序预警。这是"粗筛 → 只对 top-k 真跑 unlearn"的算力账本。
 
-阶段 ⑤ 是**两条 path 的唯一交汇点**：训练时它 JOIN `(X from ④, y from ③)` 做回归；推理时它只读 `X from ④` 出预测。任何改动阶段 ⑤ 的 API / feature 列 / 回归器，都同时影响训练和部署，需要对齐。
+阶段 ⑤ 是两条 path 的**唯一交汇点**：训练时 headline 脚本 JOIN `(X 现算, y from ③)` 做 Ridge LOO；推理时只跑 `X 现算 → audit.predict`。任何改动 ⑤ 的特征函数 / 回归器，都同时影响训练和部署。
 
 ---
 
