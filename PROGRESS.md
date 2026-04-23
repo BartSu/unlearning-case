@@ -18,7 +18,7 @@ Ralph agent：每次迭代开始时阅读此文件，结束时更新此文件。
 - **研究定位**（与 `z-doc/slides.tex` 保持一致）：三层 corruption view 是 Act I 的观察结果；forget-set audit（"便宜的粗筛预警器"）是 Act II 的方法论提议。所有代码、文档、slides 的叙事都应围绕这两幕展开。
 
 ## 当前瓶颈
-**阶段 2（unlearn 模型）**：100 个 triplet 中仅跑了 10 个代表，$n$ 扩到 100 是升级审计器 $\rho$ 置信度的必要前提。
+> 迁移到 [`STATE.md`](STATE.md)（关键数字 + 决策点 + 下一步，单一来源）。本文件专注「任务清单 + 迭代日志」。
 
 ## 文档同步规则
 `z-doc/README-CN.md` / `slides.tex` / `slides-en.tex` **三份必须始终同步**（用户只看 slides 讲解）：
@@ -35,17 +35,19 @@ Ralph agent：每次迭代开始时阅读此文件，结束时更新此文件。
 - [x] 恢复或替换已删除的 `1.data-preparation/unlearn/eval_wikitext_perplexity.py`（从 `c799c51~1` 恢复 698 行；路径更新为 `1.data-preparation/`；`py_compile` + `--help` 通过）
 - [x] 在 `1.data-preparation/README.md` 中记录数据集 schema（triplet {train=forget, validation=retain, test=probe} × 50 条 `{"text": ...}`；100 triplet × 10 cluster 布局）
 
-### 阶段 2 — Unlearn 模型（`1.data-preparation/unlearn/`）⚠️ **当前瓶颈**
-- [x] 跑 10 个代表 triplet（`triplet_0{01,11,21,…,91}`）的 GradAscent checkpoint（batch 脚本已就绪）
-- [ ] 补跑剩余 90 个 triplet 的 unlearn → 支撑 $n=10 \to 100$ 审计升级
+### 阶段 2 — Unlearn 模型（`1.data-preparation/unlearn/`）⚠️ **配置待决策**
+- [x] 跑 10 个代表 triplet（`triplet_0{01,11,21,…,91}`）的 GradAscent checkpoint（深度配置：max_steps=150 / epoch=10，见 `saves/wikitext_unlearn_sample/`）
+- [x] batch 跑满 100 个 triplet 的 GradAscent checkpoint（**浅配置**：max_steps=2 / epoch=1 / train_loss ≈ −2.4 / ~38 s 每个；落在 `saves/wikitext_unlearn/triplet_001..100_GradAscent/`）
+- [ ] **决策点**：确认 max_steps=2 是有意"轻触"配置，或按 150-step 深度配置重跑 100 个 ckpt（若选重跑，所有下游数字需同步重算）
 - [ ] 加第二个 unlearner（NPO / GradDiff）验证审计器跨算法稳健性
 
 ### 阶段 3 — 困惑度提取（`2.extract-ppl/`）
 - [x] 对 10 个 unlearn ckpt 跑 10×10 cross-PPL → `wikitext_cross_metrics_detail.json`
-- [x] `analyze_corruption.py` 产出 L1/L2/L3 三层 ground truth → `corruption_summary.json`
-- [x] 以统一格式（parquet + jsonl）保存逐样本 PPL 长表（`export_ppl_table.py` → `ppl_long.{parquet,jsonl}`，15000 行，layer ∈ {L1,L2,L3,L3_other}）
-- [x] base vs unlearned PPL 分布 sanity-check 脚本（`sanity_check_ppl.py`，四项 invariant 全 PASS：L1 geo=1.762x，L1>L2>L3 单调，base PPL 跨层一致，L1 100% 样本 ppl 上升）
-- [ ] 补 90 个 triplet 的 cross-PPL（依赖阶段 2）
+- [x] `analyze_corruption.py` 产出 L1/L2/L3 三层 ground truth → `corruption_summary.json`（已扩到 n=50：5 triplet/cluster × 10 cluster，L1 n=2500 / L2 n=5000 / L3 n=122500；geo 2.126 / 1.491 / 1.283）
+- [x] 以统一格式（parquet + jsonl）保存逐样本 PPL 长表（`export_ppl_table.py` → `ppl_long.{parquet,jsonl}`，**15000 行对应旧 n=10 快照**，layer ∈ {L1,L2,L3,L3_other}）
+- [x] base vs unlearned PPL 分布 sanity-check 脚本（`sanity_check_ppl.py`，四项 invariant 在 n=10 快照上全 PASS：L1 geo=1.762x，L1>L2>L3 单调，base PPL 跨层一致，L1 100% 样本 ppl 上升）
+- [ ] 重跑 `export_ppl_table.py` + `sanity_check_ppl.py` 刷新到 n=50 的 ppl_long（与最新 corruption_summary.json 对齐）
+- [ ] 补剩余 50 个 triplet 的 cross-PPL 到完整 n=100（依赖阶段 2 配置决策）
 
 ### 阶段 4 — 几何分析（`3.feature-engineering/` + `4.regression-predictor/geometry/`）
 - [x] 12 维 forget-set 内禀几何特征（variance / similarity / centroid / effective rank / isotropy）
@@ -71,6 +73,19 @@ Ralph agent：每次迭代开始时阅读此文件，结束时更新此文件。
 - [ ] 新实验 ($n=100$ / 跨 unlearner) 出来后同步刷新三份 doc
 
 ## 迭代日志
+
+### 迭代 15 — 2026-04-21（文件系统 vs PROGRESS.md 审计）
+- 任务：核对 PROGRESS.md 所述"阶段 2 仅跑 10 个代表"与实际 `saves/` 目录的一致性（回应用户 "what's the result for stage 2?"）。
+- 结果：partial —— 发现 PROGRESS.md 落后于实际状态，且揭出一个训练配置歧义。
+  - **已落盘**：`1.data-preparation/unlearn/saves/wikitext_unlearn/` 下 `triplet_001..100_GradAscent/` 共 100 个完整 checkpoint（每个 4 分片 safetensors ≈ 16 GB，总计 ≈ 1.6 TB），时间戳 2026-04-19 17:20 前后。
+  - **配置反差**：batch 下的 `trainer_state.json` 显示 `max_steps=2, num_train_epochs=1, train_loss ≈ −2.35, runtime ≈ 38s`；而最初验证用的 `saves/wikitext_unlearn_sample/triplet_001_GradAscent/` 为 `max_steps=150, epoch=10, train_loss=−735.46`。两者相差 ~75 倍训练步数 —— 不是规模扩展，而是明显不同的配置。
+  - **下游已半同步**：`2.extract-ppl/corruption_summary.json`（Apr 19 21:03）已在其中 50 个 ckpt 上重算 `per_cluster`（001–095，每 cluster 5 个），n=2500/5000/122500；新 geo ratio L1=2.126 / L2=1.491 / L3=1.283 显著高于旧 n=10 的 1.762 / 1.290 / 1.158。
+  - **下游未同步**：`ppl_long.parquet`（Apr 19 13:35，15000 行）仍对应旧 n=10 快照；`sanity_check_ppl.py` invariant（含 "L1 geo=1.762x"）未刷新；审计器 (`4.regression-predictor/audit/`) 所有数字仍基于 n=10。
+- 产物：本 PROGRESS.md（阶段 2 checkbox 拆分 + 阶段 3 checkbox 增补 + "当前瓶颈" 段落改写）。未改代码 / 数据。
+- 下一步（待用户决策）：
+  - **配置决策**：max_steps=2 是否为有意"轻触"配置？若是 → 把当前 100 ckpt 认作 stage 2 完成，推进下游；若否 → 按 150-step 重跑 100 ckpt，所有下游重算。
+  - 无论 A/B：将 `ppl_long.parquet` + `sanity_check_ppl.py` 的 invariant 刷新到与当前 `corruption_summary.json` 一致的 n。
+  - z-doc 三份文档（`slides.tex` / `slides-en.tex` / `README-CN.md`）引用的 geo ratio (1.762/1.290/1.158) 与审计 ρ/R²/MAE 尚未反映 n=50 的新数字，延后到配置决策落定后一次性同步。
 
 ### 迭代 14 — 2026-04-19（reporter：同步 held-out R²/MAE 到 z-doc 三份）
 - 任务：stage5-audit 迭代 11（held-out R²/MAE vs LOO-mean baseline）的文档同步。
