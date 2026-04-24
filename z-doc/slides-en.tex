@@ -442,80 +442,11 @@
     \end{center}
 \end{frame}
 
-\begin{frame}{Audit scatter: predicted vs. true}
-    \centering
-    \includegraphics[width=0.96\textwidth]{fig_audit_scatter.pdf}
-
-    \vspace{0.2em}
-    \footnotesize
-    Dashed line $y=x$; L1/L2 $\rho \approx 0.49\text{--}0.54$; L3 $\rho = 0.30$ borderline.
-\end{frame}
-
-\begin{frame}{Geometry vs. surface text}
-    \centering
-    \begin{tabular}{@{}lcc@{}}
-        \toprule
-        Features & dim & $R^2$ \\
-        \midrule
-        surface text statistics    & 261         & +0.14 \\
-        \textbf{pure geometry}     & \textbf{16} & \textbf{+0.36} \\
-        \bottomrule
-    \end{tabular}
-
-    \vspace{1.2em}
-    \begin{center}
-        \Large
-        \alert{16$\times$} fewer features, \alert{2.5$\times$} higher $R^2$
-    \end{center}
-
-    \vspace{0.4em}
-    \begin{center}
-        \normalsize
-        Corruption looks more like a \emph{geometric} phenomenon than a text-difficulty one.
-    \end{center}
-\end{frame}
-
-\begin{frame}{Honest negative result: ball-coverage doesn't work}
-    \vspace{0.5em}
-    \begin{center}
-        \large
-        Tried: circle retain samples by a radius from the forget set.
-    \end{center}
-
-    \vspace{0.8em}
-    \begin{center}
-        \large
-        Got: correlation with true L3 is $\rho = \alert{-0.27}$ (\textbf{wrong sign}).
-    \end{center}
-
-    \vspace{0.8em}
-    \begin{center}
-        \normalsize
-        Why: clusters overlap $\Rightarrow$ the ball covers almost everything.\\[0.3em]
-        Fix: signed projection / mutual-reachability distance.
-    \end{center}
-\end{frame}
-
 % ────────────────────────────────────────────────────────────────────────────
 \section{Discussion}
 
 \begin{frame}{Related Work}
-    \begin{center}
-        \large
-        Neighboring work and how we differ
-    \end{center}
-
-    \vspace{0.6em}
-    \small
-    \begin{tabular}{@{}p{0.34\textwidth}p{0.58\textwidth}@{}}
-        \toprule
-        Direction & Our difference \\
-        \midrule
-        Data-first robustness\newline(Dang+ ACL'24) & Train-set features $\to$ adversarial ASR \newline\; $\Rightarrow$ transferred to \emph{unlearning corruption} \\
-        LLM unlearning algorithms & We \emph{fix} the unlearner, analyze \emph{data-conditioned} side-effects \\
-        Influence / editing\newline locality & Model-centric $\to$ \emph{data-centric} three-layer risk \\
-        \bottomrule
-    \end{tabular}
+   
 \end{frame}
 
 \begin{frame}{Limitations}
@@ -535,22 +466,6 @@
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Future Work}
-    \vspace{0.3em}
-    \begin{center}
-        \large
-        Matching fixes for the four ``singles''
-    \end{center}
-
-    \vspace{0.6em}
-    \begin{enumerate}
-        \setlength\itemsep{0.5em}
-        \item $n: 50 \to 100$ (all 100 unlearned, extending cross-eval matrix)
-        \item add NPO / GradDiff to check auditor robustness
-        \item PPL $\to$ QA accuracy (\texttt{2.extract-qa/} ready)
-        \item \emph{audit-driven} forget-set selection: pick $\mathcal{D}_f$ with lowest predicted L3
-    \end{enumerate}
-\end{frame}
 
 \begin{frame}{Paper positioning}
     \begin{center}
@@ -571,49 +486,6 @@
         \small
         \textbf{Upgrade}: $n$=50 $\to$ 100 + second unlearner $\Rightarrow$ NeurIPS / ICML
     \end{center}
-\end{frame}
-
-% ────────────────────────────────────────────────────────────────────────────
-\begin{frame}[standout]
-    Three-layer decay, but never zero.\\[0.5em]
-    \normalsize
-    \textbf{2.13$\times$ $\to$ 1.49$\times$ $\to$ 1.28$\times$}\\[0.3em]
-    Audit L1/L2 $\rho \approx 0.49\text{--}0.54$ (CI significant), no unlearn needed.
-\end{frame}
-
-\appendix
-
-\begin{frame}[fragile]{Appendix --- reproducing the main results}
-    \footnotesize
-\begin{verbatim}
-# 0. Unlearn + cross-ppl (skippable once done)
-#    => 2.extract-ppl/wikitext_cross_metrics_detail.json
-
-# 1. Act I: three-layer ground truth
-cd 2.extract-ppl
-python analyze_corruption.py          # => corruption_summary.json
-
-# 2. Act II A: per-sample geometry predictor
-cd ../4.regression-predictor
-python 3.corruption_from_geometry.py  # => geometry/geometry_results.json
-
-# 3. Act II B: forget-set audit (LOO, Part 1+2+3+3b)
-python 4.audit_experiments.py         # => audit/audit_summary.json
-\end{verbatim}
-\end{frame}
-
-\begin{frame}{Appendix --- key artefacts}
-    \footnotesize
-    \begin{tabular}{@{}ll@{}}
-        \toprule
-        Artefact & Path \\
-        \midrule
-        three-layer corruption  & \texttt{2.extract-ppl/corruption\_summary.json} \\
-        audit LOO predictions   & \texttt{4.regression-predictor/audit/audit\_summary.json} \\
-        per-forget-set profile  & \texttt{audit/part1\_corruption\_profile.csv} \\
-        audit features          & \texttt{audit/part2\_forget\_features.csv} \\
-        \bottomrule
-    \end{tabular}
 \end{frame}
 
 \end{document}
