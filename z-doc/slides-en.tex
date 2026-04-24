@@ -31,6 +31,66 @@
 \maketitle
 
 % ────────────────────────────────────────────────────────────────────────────
+\section{Problem \& setup}
+
+\begin{frame}{Research problem: unlearning hurts unrelated data}
+    \vspace{0.3em}
+    \textbf{Context.}\;
+    Copyright / privacy / toxic content $\Rightarrow$ legal \& ethical demand to
+    \emph{selectively delete} specific training data from an LLM $\Rightarrow$
+    \textbf{LLM unlearning}.
+
+    \vspace{0.9em}
+    \textbf{But unlearning is not surgical.}
+    \begin{itemize}
+        \setlength\itemsep{0.3em}
+        \item Forgetting $\mathcal{D}_f$ \textbf{simultaneously damages} knowledge unrelated to $\mathcal{D}_f$
+        \item We call this \alert{knowledge corruption}; its radius and consequences are not yet characterised
+    \end{itemize}
+
+    \vspace{0.8em}
+    \textbf{Benchmarking pain point.}
+    \begin{itemize}
+        \setlength\itemsep{0.3em}
+        \item One unlearn + $N\!\times\!N$ cross-eval $\approx$ \textbf{several GPU-hours}
+        \item Sweeping 100 candidate forget sets $\Rightarrow$ hundreds of GPU-hours, \emph{does not scale}
+    \end{itemize}
+
+    \vspace{0.8em}
+    \begin{center}
+        \Large
+        \alert{Question: how can we \textbf{cheaply and systematically} assess the corruption a forget set will cause?}
+    \end{center}
+\end{frame}
+
+\begin{frame}{Experimental setup: triplet schema + cross-eval matrix}
+    \vspace{0.3em}
+    \textbf{Data.} WikiText-103 $\to$ HDBSCAN clustered into \textbf{10 semantic clusters}
+    \footnotesize{(Federer / Harry Potter / tennis-match / \dots)}\small.
+
+    \vspace{0.6em}
+    \textbf{Triplet schema} (10 triplets per cluster, \textbf{100 total}):
+    \begin{center}
+    \small
+    \begin{tabular}{@{}lll@{}}
+        \toprule
+        split & 50 texts & downstream use \\
+        \midrule
+        \texttt{train}      & \textbf{forget set} $\mathcal{D}_f$   & fed to unlearn (GradAscent) \\
+        \texttt{validation} & retain neighbours (same cluster)      & retain-side loss + L2 probe \\
+        \texttt{test}       & probe samples (same cluster)          & L2 / L3 evaluation \\
+        \bottomrule
+    \end{tabular}
+    \end{center}
+    All three are \emph{in the same cluster but mutually disjoint} $\Rightarrow$ naturally measures three semantic distances.
+
+    \vspace{0.6em}
+    \textbf{Evaluation.} Every ckpt is evaluated (PPL) on \emph{every other} triplet
+    $\Rightarrow$ $N \!\times\! N$ cross-matrix $\Rightarrow$ diagonal / off-diagonal
+    $\Rightarrow$ L1 / L2 / L3.
+\end{frame}
+
+% ────────────────────────────────────────────────────────────────────────────
 \section{Definitions}
 
 \begin{frame}{Three layers + how we quantify}

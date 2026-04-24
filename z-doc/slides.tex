@@ -37,6 +37,63 @@
 \maketitle
 
 % ────────────────────────────────────────────────────────────────────────────
+\section{问题与 setup}
+
+\begin{frame}{研究问题：unlearn 会伤到无关数据}
+    \vspace{0.3em}
+    \textbf{背景} \;
+    版权 / 隐私 / 有害内容 $\Rightarrow$ 法律 \& 伦理要求从 LLM 里
+    \emph{定向删除}特定训练数据 $\Rightarrow$ \textbf{LLM unlearning}。
+
+    \vspace{0.9em}
+    \textbf{但 unlearning 不是 surgical}：
+    \begin{itemize}
+        \setlength\itemsep{0.3em}
+        \item 让模型忘掉 forget set $\mathcal{D}_f$，会\textbf{同时损伤}与 $\mathcal{D}_f$ 无关的知识
+        \item 我们称之为 \alert{knowledge corruption}，其半径与后果尚未被系统刻画
+    \end{itemize}
+
+    \vspace{0.8em}
+    \textbf{Benchmark 痛点}：
+    \begin{itemize}
+        \setlength\itemsep{0.3em}
+        \item 真跑一次 unlearn + $N\!\times\!N$ cross-eval $\approx$ \textbf{数 GPU·hour}
+        \item 扫 100 个 candidate forget set $\Rightarrow$ 数百 GPU·hour，\emph{不 scale}
+    \end{itemize}
+
+    \vspace{0.8em}
+    \begin{center}
+        \Large
+        \alert{问题：怎么\textbf{便宜、系统}地评估一个 forget set 会造成的 corruption？}
+    \end{center}
+\end{frame}
+
+\begin{frame}{实验 setup：triplet schema + cross-eval 矩阵}
+    \vspace{0.3em}
+    \textbf{数据}：WikiText-103 $\to$ HDBSCAN 聚成 \textbf{10 个语义簇}\footnotesize{（Federer / Harry Potter / tennis-match / …）}\small。
+
+    \vspace{0.6em}
+    \textbf{Triplet schema}（每簇 10 个 triplet，共 \textbf{100}）：
+    \begin{center}
+    \small
+    \begin{tabular}{@{}lll@{}}
+        \toprule
+        split & 50 条文本 & 下游用途 \\
+        \midrule
+        \texttt{train}      & \textbf{forget set} $\mathcal{D}_f$   & 喂给 unlearn（GradAscent） \\
+        \texttt{validation} & retain 邻居（同簇）     & retain 侧 loss + L2 probe \\
+        \texttt{test}       & probe 样本（同簇）      & L2 / L3 评测 \\
+        \bottomrule
+    \end{tabular}
+    \end{center}
+    三份\emph{同簇但互不相交} $\Rightarrow$ 天然 measure 三种语义距离。
+
+    \vspace{0.6em}
+    \textbf{评测}：每个 ckpt 在\emph{全部}其它 triplet 上评 PPL $\Rightarrow$ $N \!\times\! N$ cross-matrix
+    $\Rightarrow$ 对角 / 非对角 $\Rightarrow$ L1 / L2 / L3。
+\end{frame}
+
+% ────────────────────────────────────────────────────────────────────────────
 \section{定义}
 
 \begin{frame}{三层定义 + 量化指标}
