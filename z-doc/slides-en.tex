@@ -446,7 +446,28 @@
 \section{Discussion}
 
 \begin{frame}{Related Work}
-   
+    \small
+    Two papers shape how this work is framed.
+
+    \vspace{0.5em}
+    \renewcommand{\arraystretch}{1.25}
+    \begin{tabular}{@{}p{0.30\textwidth}p{0.33\textwidth}p{0.32\textwidth}@{}}
+        \toprule
+        \textbf{Paper} & \textbf{What they do} & \textbf{How it shapes us} \\
+        \midrule
+        \textbf{A Curious Case}\newline\scriptsize Dang+ 2024 \emph{(arXiv 2402.11469)}
+            & \emph{Data-first} features of training set $\to$ predict adversarial ASR; 30--193$\times$ faster than model-first
+            & Same paradigm transferred: forget-set 12-d geometry $\to$ predict $L_1$/$L_2$/$L_3$ corruption without running unlearn \\
+        \midrule
+        \textbf{Probing Knowledge Holes}\newline\scriptsize Ko+ 2025 \emph{(arXiv 2511.00030)}
+            & Unlearn leaves \emph{adjacent / latent knowledge holes} that standard utility benchmarks miss; they \emph{probe} post-unlearn
+            & Exactly the phenomenon our $L_2$ locality + $L_3$ spillover quantify --- but we \emph{audit pre-unlearn}, not probe after \\
+        \bottomrule
+    \end{tabular}
+
+    \vspace{0.5em}
+    \footnotesize\itshape
+    One-liner: Dang+ taught us \emph{how to predict from data side}; Ko+ told us \emph{what to predict}.
 \end{frame}
 
 \begin{frame}{Limitations}
