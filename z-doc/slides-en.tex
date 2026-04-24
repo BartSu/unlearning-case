@@ -93,18 +93,18 @@
     \vspace{0.8em}
     \begin{center}
         \Large
-        \textbf{L1 \;2.13$\times$} \;$\to$\; \textbf{L2 \;1.49$\times$} \;$\to$\; \textbf{L3 \;1.28$\times$}
+        \textbf{L1 \;1.96$\times$} \;$\to$\; \textbf{L2 \;1.32$\times$} \;$\to$\; \textbf{L3 \;1.19$\times$}
     \end{center}
 
     \vspace{0.8em}
     \begin{center}
         \normalsize
-        And \alert{80.3\,\%} of ``irrelevant'' samples still see elevated PPL.
+        And \alert{73.8\,\%} of ``irrelevant'' samples still see elevated PPL.
     \end{center}
 
     \vfill
     \footnotesize\itshape\centering
-    Llama-3.1-8B-Instruct $\cdot$ GradAscent $\cdot$ $n=50$ forget sets (10 HDBSCAN clusters $\times$ 5).
+    Llama-3.1-8B-Instruct $\cdot$ GradAscent $\cdot$ $n=100$ forget sets (10 HDBSCAN clusters $\times$ 10).
 \end{frame}
 
 % ────────────────────────────────────────────────────────────────────────────
@@ -157,7 +157,7 @@
     \vfill
     \begin{center}
         \Large
-        Switch the forget set $\Rightarrow$ side-effects differ by \textbf{near 4$\times$}.
+        Switch the forget set $\Rightarrow$ L1 geo differs by \textbf{1.6$\times$}; \emph{log-scale spread} $\approx$ \textbf{1.7$\times$}.
     \end{center}
 
     \vspace{0.6em}
@@ -183,9 +183,9 @@
         arr/.style={-Latex, thick, mDarkTeal},
     ]
         \node[box, fill=mDarkTeal!12] (c) {WikiText-103\\cluster into \textbf{10}};
-        \node[box, fill=mDarkTeal!12, right=6mm of c] (t) {5 forget sets\\ per cluster};
-        \node[box, fill=mLightGreen!20, right=6mm of t] (u) {\textbf{50} unlearn\\ runs};
-        \node[box, fill=mLightBrown!25, right=6mm of u] (m) {\textbf{50$\times$50}\\ cross-ppl};
+        \node[box, fill=mDarkTeal!12, right=6mm of c] (t) {10 forget sets\\ per cluster};
+        \node[box, fill=mLightGreen!20, right=6mm of t] (u) {\textbf{100} unlearn\\ runs};
+        \node[box, fill=mLightBrown!25, right=6mm of u] (m) {\textbf{100$\times$100}\\ cross-ppl};
 
         \draw[arr] (c) -- (t);
         \draw[arr] (t) -- (u);
@@ -195,7 +195,7 @@
     \vspace{1.4em}
     \centering
     \large
-    Every ckpt eval'd on every triplet $\Rightarrow$ 50$\times$50 matrix
+    Every ckpt eval'd on every triplet $\Rightarrow$ 100$\times$100 matrix
 \end{frame}
 
 \begin{frame}{Where L1 / L2 / L3 sit in the cross-matrix}
@@ -255,16 +255,16 @@
         \toprule
         & L1 forget & L2 locality & L3 spillover \\
         \midrule
-        geo-mean $r$              & \textbf{2.13$\times$} & \textbf{1.49$\times$} & \textbf{1.28$\times$} \\
-        fraction raised ($>1.1\times$) & 99.0\,\%       & 91.9\,\%       & \alert{80.3\,\%} \\
+        geo-mean $r$              & \textbf{1.96$\times$} & \textbf{1.32$\times$} & \textbf{1.19$\times$} \\
+        fraction raised ($>1.1\times$) & 100.0\,\%      & 90.8\,\%       & \alert{73.8\,\%} \\
         \bottomrule
     \end{tabular}
 
     \vspace{1.2em}
     \begin{center}
         \large
-        \textbf{C1 holds}: 2.13 $>$ 1.49 $>$ 1.28\\[0.4em]
-        \textbf{C2 holds}: L3 still raises \alert{80.3\,\%} of samples
+        \textbf{C1 holds}: 1.96 $>$ 1.32 $>$ 1.19\\[0.4em]
+        \textbf{C2 holds}: L3 still raises \alert{73.8\,\%} of samples
     \end{center}
 \end{frame}
 
@@ -274,7 +274,7 @@
 
     \vspace{0.3em}
     \footnotesize
-    Left axis: L1 $>$ L2 $>$ L3\quad|\quad Right axis: L3 still raises \alert{80.3\,\%}.
+    Left axis: L1 $>$ L2 $>$ L3\quad|\quad Right axis: L3 still raises \alert{73.8\,\%}.
 \end{frame}
 
 \begin{frame}{C3: how much does side-effect vary across forget sets?}
@@ -284,17 +284,17 @@
         \toprule
         & L1 & L2 & L3 \\
         \midrule
-        mildest (\texttt{star} rep)    & 1.42 & 1.12 & 1.07 \\
-        \alert{worst (\texttt{storm} cluster 075)} & \alert{\textbf{4.07}} & \alert{\textbf{2.94}} & \alert{\textbf{1.64}} \\
+        mildest triplet (\texttt{029})         & 1.54 & 1.15 & 1.12 \\
+        \alert{worst triplet (\texttt{storm 073})} & \alert{\textbf{2.44}} & \alert{\textbf{1.73}} & \alert{\textbf{1.26}} \\
         \midrule
-        spread ($n=50$, max / min)     & \textbf{2.87$\times$} & 2.82$\times$ & 1.54$\times$ \\
+        spread ($n=100$, max / min)    & \textbf{1.59$\times$} & 1.50$\times$ & 1.13$\times$ \\
         \bottomrule
     \end{tabular}
 
     \vspace{1.2em}
     \begin{center}
         \Large
-        Same algorithm, different forget sets $\Rightarrow$ L1 differs by \alert{\textbf{nearly 3$\times$}}.
+        Same algorithm, different forget sets $\Rightarrow$ L1 differs by \alert{\textbf{1.6$\times$}}; log-scale spread $\approx 1.7\times$.
     \end{center}
 
     \vspace{0.4em}
@@ -310,7 +310,7 @@
 
     \vspace{0.3em}
     \footnotesize
-    Sorted by L1 ($n=50$); the \alert{storm} cluster concentrates the worst triplets across all layers.
+    Sorted by L1 ($n=100$); the \alert{storm} cluster concentrates the worst triplets across all layers.
 \end{frame}
 
 % ────────────────────────────────────────────────────────────────────────────
@@ -339,7 +339,7 @@
     \vspace{0.6em}
     \footnotesize\centering
     12 dims = variance / pairwise similarity / centroid / concentration (effective rank, isotropy).\\
-    Leave-One-Out over 50 forget sets.
+    Leave-One-Out over 100 forget sets.
 \end{frame}
 
 \begin{frame}{What are the 12 geometric features?}
@@ -382,28 +382,27 @@
         \toprule
         & L1 forget & L2 locality & L3 spillover \\
         \midrule
-        $R^2$ (audit / baseline $-0.04$) & \textbf{+0.22} & \textbf{+0.30} & +0.05 \\
-        MAE (audit / baseline)   & \textbf{0.40} / 0.43 & \textbf{0.28} / 0.32 & \textbf{0.12} / 0.12 \\
-        rank Spearman $\rho$     & +0.49 & +0.54 & +0.30 \\
-        95\% CI ($n_\text{boot}=10$k) & [$+0.22$, $+0.68$] & [$+0.29$, $+0.72$] & [$-0.01$, $+0.55$] \\
-        Top-1 hit                & $\times$ & $\times$ & $\times$ \\
+        $R^2$ (audit / baseline $-0.02$) & \textbf{+0.25} & \textbf{+0.71} & \textbf{+0.22} \\
+        MAE (audit / baseline)   & \textbf{0.14} / 0.17 & \textbf{0.05} / 0.11 & \textbf{0.02} / 0.02 \\
+        rank Spearman $\rho$     & +0.53 & \textbf{+0.84} & +0.49 \\
+        95\% CI ($n_\text{boot}=10$k) & [$+0.37$, $+0.67$] & \textbf{[$+0.76$, $+0.89$]} & [$+0.33$, $+0.63$] \\
         \bottomrule
     \end{tabular}
 
     \vspace{0.7em}
     \begin{center}
         \Large
-        L1 / L2 rank signals \emph{significant} (CI exclude 0); L3 borderline
+        All three layers \emph{significant} (CI exclude 0); \textbf{L2} is strongest
     \end{center}
     \vspace{0.2em}
     \begin{center}
         \normalsize
-        All three layers beat LOO-mean baseline; scaling to $n=100$ to tighten L3.
+        Three layers beat LOO-mean baseline; L3 lifted from $R^2=-0.46$ ($n=10$) to $+0.22$ ($n=100$).
     \end{center}
 
     \vspace{0.2em}
     \footnotesize\centering\itshape
-    Held-out: LOO over 50 triplets ($10\text{ clusters} \times 5$), Ridge $\alpha=1$, 12-d forget geometry.
+    Held-out: LOO over 100 triplets ($10\text{ clusters} \times 10$), Ridge $\alpha=1$, 12-d forget geometry.
 \end{frame}
 
 \begin{frame}{Positioning: a warning tool, not a replacement}
@@ -413,7 +412,7 @@
         \toprule
          & \textbf{Can} & \textbf{Cannot} \\
         \midrule
-        \textbf{Rank}    & tell who is worse (L1/L2 $\rho \approx 0.49\text{--}0.54$) & absolute value \\
+        \textbf{Rank}    & tell who is worse (all three $\rho$ exclude 0, L2 $=0.84$) & absolute value \\
         \textbf{Screen}  & red / yellow / green warnings           & score an unlearner \\
         \textbf{Save compute} & 1 s vs. GPU-hours                  & replace the final unlearn \\
         \bottomrule
@@ -473,7 +472,7 @@
         \setlength\itemsep{0.6em}
         \item single base model (Llama-3.1-8B-Instruct)
         \item single unlearner (GradAscent)
-        \item $n = 50$ forget sets (L1/L2 CI tight, L3 still borderline)
+        \item $n = 100$ forget sets (all three CIs exclude 0; L3 still the weakest $R^2$)
         \item single metric: PPL ($\neq$ QA accuracy)
     \end{itemize}
 \end{frame}
@@ -488,15 +487,15 @@
     \vspace{0.8em}
     \textbf{Three selling points}
     \begin{enumerate}
-        \item three-layer view + L3 at 80.3\,\% $\Rightarrow$ spillover \emph{non-negligible}
+        \item three-layer view + L3 raises 73.8\,\% of cross-topic text $\Rightarrow$ spillover \emph{non-negligible}
         \item benchmarking $\to$ \textbf{forget-set audit} perspective shift
-        \item geometry alone ranks corruption (L1/L2 $\rho \approx 0.49\text{--}0.54$, CI excludes 0)
+        \item geometry alone ranks corruption --- L2 $R^2=+0.71$, L3 lifts to $+0.22$ at $n=100$, all $\rho$ CIs exclude 0
     \end{enumerate}
 
     \vspace{0.6em}
     \begin{center}
         \small
-        \textbf{Upgrade}: $n$=50 $\to$ 100 + second unlearner $\Rightarrow$ NeurIPS / ICML
+        \textbf{Status}: $n{=}100$ \checkmark\quad \textbf{Next}: NPO / GradDiff \;+\; QA-label metric $\Rightarrow$ NeurIPS / ICML
     \end{center}
 \end{frame}
 
